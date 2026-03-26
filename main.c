@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "raylib.h"
@@ -21,8 +22,8 @@
 
 #define WIDTH  512
 #define HEIGHT 512
-#define GRID_X 8
-#define GRID_Y 8
+#define GRID_X 10
+#define GRID_Y 10
 #define GRID_SIZE GRID_X * GRID_Y
 #define CELL_X 64
 #define CELL_Y 64
@@ -72,16 +73,117 @@ typedef enum {
    -3 = black knight
    -1 = black pawn
 */
+// e_piece board[GRID_X][GRID_Y] = {
+//     {0, 0,       0,         0,        0,        0,      0,        0,        0,      0},
+//     {0,  b_ROOK, b_KNIGHT,  b_BISHOP, b_QUEEN,  b_KING, b_BISHOP, b_KNIGHT, b_ROOK, 0},
+//     {0,  b_PAWN, b_PAWN,    b_PAWN,   b_PAWN,   b_PAWN, b_PAWN,   b_PAWN,   w_PAWN, 0},
+//     {0,  0,      0,         0,        0,        0,      0,        0,        0,      0},
+//     {0,  0,      0,         0,        0,        0,      0,        0,        0,      0},
+//     {0,  0,      0,         0,        0,        0,      0,        0,        0,      0},
+//     {0,  0,      0,         0,        0,        0,      0,        0,        0,      0},
+//     {0,  w_PAWN, w_PAWN,    w_PAWN,   w_PAWN,   w_PAWN, w_PAWN,   w_PAWN,   w_PAWN, 0},
+//     {0,  b_PAWN, w_KNIGHT,  w_BISHOP, w_QUEEN,  w_KING, w_BISHOP, w_KNIGHT, w_ROOK, 0},
+//     {0,  0,      0,         0,        0,        0,      0,        0,        0,      0},
+// };
+
 e_piece board[GRID_X][GRID_Y] = {
-    {b_ROOK, b_KNIGHT, b_BISHOP, b_QUEEN, b_KING, b_BISHOP,  b_KNIGHT, b_ROOK},
-    {b_PAWN, b_PAWN,   b_PAWN,   b_PAWN,  b_PAWN, b_PAWN,    b_PAWN,   b_PAWN},
-    { 0,     0,        0,        0,       0,      0,         0,        0     },
-    { 0,     0,        0,        0,       0,      0,         0,        0     },
-    { 0,     0,        0,        0,       0,      0,         0,        0     },
-    { 0,     0,        0,        0,       0,      0,         0,        0     },
-    {w_PAWN, w_PAWN,   w_PAWN,   w_PAWN,  w_PAWN, w_PAWN,    w_PAWN,   w_PAWN},
-    {w_ROOK, w_KNIGHT, w_BISHOP, w_QUEEN, w_KING, w_BISHOP,  w_KNIGHT, w_ROOK },
+    {0, 0,      0,        0,        0,        0,      0,         0,       0,      0},
+    {0, b_ROOK, b_KNIGHT, b_BISHOP, b_QUEEN, b_KING, b_BISHOP,  b_KNIGHT, b_ROOK, 0},
+    {0, b_PAWN, b_PAWN,   b_PAWN,   b_PAWN,  b_PAWN, b_PAWN,    b_PAWN,   w_PAWN, 0},
+    {0,  0,     0,        0,        0,       0,      0,         0,        0     , 0},
+    {0,  0,     0,        0,        0,       0,      0,         0,        0     , 0},
+    {0,  0,     0,        0,        0,       0,      0,         0,        0     , 0},
+    {0, 0,     0,        b_PAWN,        0,       0,      0,         0,        0 , 0},
+    {0, w_PAWN, w_PAWN,   w_PAWN,   w_PAWN,  w_PAWN, w_PAWN,    w_PAWN,   w_PAWN, 0},
+    {0, b_PAWN, w_KNIGHT, w_BISHOP, w_QUEEN, w_KING, w_BISHOP,  w_KNIGHT, w_ROOK, 0},
+    {0, 0,      0,        0,        0,        0,      0,         0,       0,      0},
 };
+
+bool selected_possible_moves[GRID_X][GRID_Y] = {0};
+void reset_possible_moves(void)
+{
+    for (size_t i = 0; i < GRID_Y; i++) {
+        for (size_t j = 0; j < GRID_X; j++) {
+            selected_possible_moves[i][j] = false;
+        }
+    }
+}
+void find_possible_moves(size_t x, size_t y, e_piece type)
+{
+    switch (type) {
+        case e_EMPTY: {
+            reset_possible_moves();
+        } break;
+        case w_PAWN: {
+            if (y > 0 && y < 8) {
+                if (board[y - 1][x] == 0) {
+                    selected_possible_moves[y - 1][x] = true;
+                    if (board[y - 2][x] == 0 && y == 7) {
+                        selected_possible_moves[y - 2][x] = true;
+                    }
+                } 
+                if (x - 1 > 0 && board[y - 1][x - 1] < 0) selected_possible_moves[y - 1][x - 1] = true;
+                if (x + 1 < 8 && board[y - 1][x + 1] < 0) selected_possible_moves[y - 1][x + 1] = true;
+            }
+        } break;
+        case w_KNIGHT: {
+            if (board[y - 2][x + 1] <= 0) selected_possible_moves[y - 2][x + 1] = true;
+            if (board[y - 2][x - 1] <= 0) selected_possible_moves[y - 2][x - 1] = true;
+
+            if (board[y - 1][x - 2] <= 0) selected_possible_moves[y - 1][x - 2] = true;
+            if (board[y - 1][x + 2] <= 0) selected_possible_moves[y - 1][x + 2] = true;
+
+            if (board[y + 2][x + 1] <= 0) selected_possible_moves[y + 2][x + 1] = true;
+            if (board[y + 2][x - 1] <= 0) selected_possible_moves[y + 2][x - 1] = true;
+
+            if (board[y + 1][x - 2] <= 0) selected_possible_moves[y + 1][x - 2] = true;
+            if (board[y + 1][x + 2] <= 0) selected_possible_moves[y + 1][x + 2] = true;
+        } break;
+        case w_BISHOP: {
+        } break;
+        case w_ROOK: {
+        } break;
+        case w_QUEEN: {
+        } break;
+        case w_KING: {
+        } break;
+
+        case b_PAWN: {
+            if (y > 0 && y < 8) {
+                if (board[y + 1][x] == 0) {
+                    selected_possible_moves[y + 1][x] = true;
+                    if (board[y + 2][x] == 0 && y == 2) {
+                        selected_possible_moves[y + 2][x] = true;
+                    }
+                } 
+                if (x - 1 > 0 && board[y + 1][x - 1] > 0) selected_possible_moves[y + 1][x - 1] = true;
+                if (x + 1 < 8 && board[y + 1][x + 1] > 0) selected_possible_moves[y + 1][x + 1] = true;
+            }
+        } break;
+        case b_KNIGHT: {
+                if (board[y - 2][x + 1] >= 0) selected_possible_moves[y - 2][x + 1] = true;
+                if (board[y - 2][x - 1] >= 0) selected_possible_moves[y - 2][x - 1] = true;
+
+                if (board[y - 1][x - 2] >= 0) selected_possible_moves[y - 1][x - 2] = true;
+                if (board[y - 1][x + 2] >= 0) selected_possible_moves[y - 1][x + 2] = true;
+
+                if (board[y + 2][x + 1] >= 0) selected_possible_moves[y + 2][x + 1] = true;
+                if (board[y + 2][x - 1] >= 0) selected_possible_moves[y + 2][x - 1] = true;
+
+                if (board[y + 1][x - 2] >= 0) selected_possible_moves[y + 1][x - 2] = true;
+                if (board[y + 1][x + 2] >= 0) selected_possible_moves[y + 1][x + 2] = true;
+        } break;
+        case b_BISHOP: {
+        } break;
+        case b_ROOK: {
+        } break;
+        case b_QUEEN: {
+        } break;
+        case b_KING: {
+        } break;
+    
+    }
+}
 
 
 int main(void)
@@ -129,96 +231,110 @@ int main(void)
 
     e_turn turn = e_WHITE;
     e_state state = NONE;
-    Vector2 current_selected = {0, 0};
+
+    size_t selected_x = 0;
+    size_t selected_y = 0;
+    e_piece selected_type = e_EMPTY;
+
     while (!WindowShouldClose()) { 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             Vector2 mouse_pos = GetMousePosition();
-            size_t x = (size_t)mouse_pos.x / CELL_X;
-            size_t y = (size_t)mouse_pos.y / CELL_Y;
-            if (state == SELECT && x == current_selected.x && y == current_selected.y) {
+            size_t x = ((size_t)mouse_pos.x / CELL_X) + 1;
+            size_t y = ((size_t)mouse_pos.y / CELL_Y) + 1;
+            if (state == SELECT && x == selected_x && y == selected_y) {
                 state = NONE;
+                selected_type = e_EMPTY;
+                reset_possible_moves();
             }
             else if (state == SELECT) {
-                board[y][x] = board[(int)current_selected.y][(int)current_selected.x];
-                board[(int)current_selected.y][(int)current_selected.x] = 0;
-                current_selected.x = 0;
-                current_selected.y = 0;
+                if (selected_possible_moves[y][x]) {
+                    board[y][x] = board[selected_y][selected_x];
+                    board[selected_y][selected_x] = 0;
+                }
+                selected_x = 0;
+                selected_y = 0;
                 state = NONE;
+                selected_type = e_EMPTY;
+                reset_possible_moves();
             }
             else if (board[y][x] != 0 && state == NONE) {
                 state = SELECT;
-                current_selected.x = x;
-                current_selected.y = y;
+                selected_x = x;
+                selected_y = y;
+                selected_type = board[y][x];
             }
         }
         BeginDrawing();
             ClearBackground(WHITE);
             DrawTexture(board_background, 0, 0, WHITE);
-            for (size_t i = 0; i < GRID_X; i++) {
-                for (size_t j = 0; j < GRID_Y; j++) {
+            for (size_t i = 1; i < GRID_Y - 1; i++) {
+                for (size_t j = 1; j < GRID_X - 1; j++) {
                     switch (board[i][j]) {
                         case e_EMPTY: {
                             continue;
                         } break;
                         case w_PAWN: {
-                            DrawTextureEx(w_pawn, (Vector2) {(j * CELL_X) + 10, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(w_pawn, (Vector2) {((j - 1) * CELL_X) + 11, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case w_KNIGHT: {
-                            DrawTextureEx(w_knight, (Vector2) {(j * CELL_X) + 8, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(w_knight, (Vector2) {((j - 1) * CELL_X) + 8, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case w_BISHOP: {
-                            DrawTextureEx(w_bishop, (Vector2) {(j * CELL_X) + 7, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(w_bishop, (Vector2) {((j - 1) * CELL_X) + 7, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case w_ROOK: {
-                            DrawTextureEx(w_rook, (Vector2) {(j * CELL_X) + 10, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(w_rook, (Vector2) {((j - 1) * CELL_X) + 10, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case w_QUEEN: {
-                            DrawTextureEx(w_queen, (Vector2) {(j * CELL_X) + 5, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(w_queen, (Vector2) {((j - 1) * CELL_X) + 5, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case w_KING: {
-                            DrawTextureEx(w_king, (Vector2) {(j * CELL_X) + 7, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(w_king, (Vector2) {((j - 1) * CELL_X) + 7, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
 
                         case b_PAWN: {
-                            DrawTextureEx(b_pawn, (Vector2) {(j * CELL_X) + 10, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(b_pawn, (Vector2) {((j - 1) * CELL_X) + 11, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case b_KNIGHT: {
-                            DrawTextureEx(b_knight, (Vector2) {(j * CELL_X) + 8, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(b_knight, (Vector2) {((j - 1) * CELL_X) + 8, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case b_BISHOP: {
-                            DrawTextureEx(b_bishop, (Vector2) {(j * CELL_X) + 7, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(b_bishop, (Vector2) {((j - 1) * CELL_X) + 7, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case b_ROOK: {
-                            DrawTextureEx(b_rook, (Vector2) {(j * CELL_X) + 10, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(b_rook, (Vector2) {((j - 1) * CELL_X) + 10, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case b_QUEEN: {
-                            DrawTextureEx(b_queen, (Vector2) {(j * CELL_X) + 5, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(b_queen, (Vector2) {((j - 1) * CELL_X) + 5, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
                         case b_KING: {
-                            DrawTextureEx(b_king, (Vector2) {(j * CELL_X) + 7, (i * CELL_Y) + 5}, 0, 0.4 , WHITE);
+                            DrawTextureEx(b_king, (Vector2) {((j - 1) * CELL_X) + 7, ((i - 1) * CELL_Y) + 5}, 0, 0.4 , WHITE);
                         } break;
 
                     }
                 } 
             }
 
-            // switch (state) {
-            //     case NONE: {
-            //
-            //     } break;
-            //
-            //     case SELECT: {
-            //         /*
-            //          * For all valid positions of selected piece
-            //          * DrawCircle((current_selected.x * CELL_X) + CELL_X/2, ((current_selected.y - 1) * CELL_Y) + CELL_Y/2, 5, GRAY);
-            //          * 
-            //          */
-            //     }; break;
-            //
-            //     default: {
-            //
-            //     } break;
-            // }
+            switch (state) {
+                case NONE: {
+
+                } break;
+
+                case SELECT: {
+                    find_possible_moves(selected_x, selected_y, selected_type);
+                    for (size_t i = 1; i < GRID_Y - 1; i++) {
+                        for (size_t j = 1; j < GRID_X - 1; j++) {
+                            if (selected_possible_moves[i][j]) {
+                                DrawCircle(((j - 1) * CELL_X) + CELL_X/2, ((i - 1) * CELL_Y) + CELL_Y/2, 5, GRAY);
+                            }
+                        }
+                    }
+                }; break;
+
+                default: {
+
+                } break;
+            }
         EndDrawing();
     }
     CloseWindow();
