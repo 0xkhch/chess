@@ -28,10 +28,10 @@
    -1 = black pawn
 */
 extern e_piece board[GRID_X * GRID_Y];
-extern bool possible_moves[GRID_X][GRID_Y];
+extern bool possible_moves[GRID_X * GRID_Y];
 extern e_turn turn;
 extern void reset_possible_moves(void);
-extern void find_possible_moves(size_t x, size_t y, e_piece type);
+extern int find_possible_moves(int x, int y, e_piece type);
 extern void init_board(char* str);
 #endif // !BOARD_H_
 

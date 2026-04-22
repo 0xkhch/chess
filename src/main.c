@@ -48,6 +48,8 @@ void draw_pieces(Texture* pieces)
                 .x = (j * CELL_X) - (128 * j), 
                 .y = (i * CELL_Y) - (128 * i)
             };
+            // if (board[i * GRID_X + j] != e_EMPTY)
+            //     DrawText(TextFormat("x: %d y: %d", j, i), pos.x + (128 * j), pos.y + (128 * i), 32, RED);
             switch (board[i * GRID_X + j]) {
                 case e_EMPTY: {
                     continue;
@@ -169,6 +171,9 @@ int main(int argc, char** argv)
                 selected_y = y;
                 selected_type = board[y * GRID_X + x];
             }
+            else {
+                state = NONE;
+            }
         }
         BeginDrawing();
             ClearBackground(WHITE);
@@ -181,11 +186,15 @@ int main(int argc, char** argv)
                 } break;
 
                 case SELECT: {
-                    find_possible_moves(selected_x, selected_y, selected_type);
+                    int num = find_possible_moves(selected_x, selected_y, selected_type);
+                    if (num <= 0) {
+                        state = NONE;
+                        break;
+                    }
                     for (size_t i = 0; i < GRID_Y; i++) {
                         for (size_t j = 0; j < GRID_X; j++) {
                             if (possible_moves[i * GRID_X + j]) {
-                                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, GRAY);
+                                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, RED);
                             }
                         }
                     }

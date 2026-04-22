@@ -1,5 +1,5 @@
-CC = gcc 
-FLAGS = -Wall -Wextra -ggdb -std=c99 
+CC = gcc
+FLAGS = -Wall -Wextra -ggdb -std=c99
 OUTPUT = build/main
 SRC = src/main.c src/board.c
 INCLUDE = -Iinclude/ -Iassets/ -Iraylib-5.5_linux_amd64/include
