@@ -71,7 +71,7 @@ int move_pawn(int x, int y, e_piece type)
                 possible_moves[pos - GRID_X + 1] = true;
                 num++;
             }
-            if (board[pos - GRID_X - 1] < 0) {
+            if (board[pos - GRID_X - 1] < 0 && x != 0) {
                 possible_moves[pos - GRID_X - 1] = true;
                 num++;
             }
@@ -86,7 +86,7 @@ int move_pawn(int x, int y, e_piece type)
                         num++;
                     }
                 }
-                if (board[pos + GRID_X + 1] > 0) {
+                if (board[pos + GRID_X + 1] > 0 && x != GRID_X - 1) {
                     num++;
                     possible_moves[pos + GRID_X + 1] = true;
                 }
@@ -260,10 +260,10 @@ int move_rook(int x, int y, e_piece type)
     for (int i = x + 1; i < GRID_X; i++) {
         num++;
         if (type == w_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] <= 0 ? true : false;
+            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] <= 0 ? true : false;
         }
         else if (type == b_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] >= 0 ? true : false;
+            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] >= 0 ? true : false;
         }
         if (board[y * GRID_Y + i] != 0) break;
     }
@@ -282,10 +282,10 @@ int move_rook(int x, int y, e_piece type)
     for (int i = x - 1; i >= 0; i--) {
         num++;
         if (type == w_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] <= 0 ? true : false;
+            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] <= 0 ? true : false;
         }
         else if (type == b_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] >= 0 ? true : false;
+            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] >= 0 ? true : false;
         }
         if (board[y * GRID_Y + i] != 0) break;
     }
