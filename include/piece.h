@@ -2,12 +2,6 @@
 #define PIECE_H_
 
 typedef enum {
-    e_WHITE,
-    e_BLACK
-} e_turn;
-
-
-typedef enum {
     NONE,
     SELECT,
 } e_state;

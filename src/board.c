@@ -5,12 +5,13 @@
 
 e_piece board[GRID_X * GRID_Y] = {0};
 bool possible_moves[GRID_X * GRID_Y] = {0};
-e_turn turn = e_WHITE;
 
 int move_pawn(int x, int y, e_piece type);
 int move_knight(int x, int y, e_piece type);
 int move_bishop(int x, int y, e_piece type);
 int move_rook(int x, int y, e_piece type);
+int move_queen(int x, int y, e_piece type);
+int move_king(int x, int y, e_piece type);
 
 void reset_possible_moves(void)
 {
@@ -43,11 +44,12 @@ int find_possible_moves(int x, int y, e_piece type)
         } break;
         case w_QUEEN:
         case b_QUEEN: {
+            num = move_queen(x, y, type);
         } break;
 
-        case w_KING: {
-        } break;
+        case w_KING: 
         case b_KING: {
+            num = move_king(x, y, type);
         } break;
     }
     return num;
@@ -240,6 +242,18 @@ int move_rook(int x, int y, e_piece type)
         }
         if (board[y * GRID_Y + i] != 0) break;
     }
+    return num;
+}
+
+int move_queen(int x, int y, e_piece type)
+{
+    int num = 0;
+    return num;
+}
+
+int move_king(int x, int y, e_piece type)
+{
+    int num = 0;
     return num;
 }
 
