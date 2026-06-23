@@ -48,8 +48,10 @@ void draw_pieces(Texture* pieces)
                 .x = (j * CELL_X) - (128 * j), 
                 .y = (i * CELL_Y) - (128 * i)
             };
-            // if (board[i * GRID_X + j] != e_EMPTY)
-            //     DrawText(TextFormat("x: %d y: %d", j, i), pos.x + (128 * j), pos.y + (128 * i), 32, RED);
+#ifdef DEBUG
+            if (board[i * GRID_X + j] != e_EMPTY)
+                DrawText(TextFormat("x: %d y: %d", j, i), pos.x + (128 * j), pos.y + (128 * i), 32, RED);
+#endif // DEBUG
             switch (board[i * GRID_X + j]) {
                 case e_EMPTY: {
                     continue;

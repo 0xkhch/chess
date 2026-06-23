@@ -105,80 +105,31 @@ int move_knight(int x, int y, e_piece type)
     int num = 0;
     int pos = y * GRID_Y + x;
     if (pos >= 0 && pos < GRID_SIZE) {
-        if (type ==  w_KNIGHT) {
-            if (x != GRID_X - 1 && pos - (GRID_Y*2) + 1 >= 0 && board[pos - (GRID_Y*2) + 1] <= 0) {
-                num++;
-                possible_moves[pos - (GRID_Y*2) + 1] = true; // top right
-            }
-            if (x != 0 && pos - (GRID_Y*2) - 1 >= 0 && board[pos - (GRID_Y*2) - 1] <= 0) {
-                num++;
-                possible_moves[pos - (GRID_Y*2) - 1] = true; // top left
-            }
-
-            if (x < GRID_X - 2 && pos - (GRID_Y) + 2 >= 0 && board[pos - (GRID_Y) + 2] <= 0) {
-                num++;
-                possible_moves[pos - (GRID_Y) + 2] = true; // upper right
-            }
-            if (x > 1 && pos - (GRID_Y) - 2 >= 0 && board[pos - (GRID_Y) - 2] <= 0) {
-                num++;
-                possible_moves[pos - (GRID_Y) - 2] = true; // upper left
-            }
-
-            if (x != GRID_X - 1 && pos + (GRID_Y*2) + 1 < GRID_SIZE && board[pos + (GRID_Y*2) + 1] <= 0) {
-                num++;
-                possible_moves[pos + (GRID_Y*2) + 1] = true; // bottom right
-            }
-            if (x != 0 && pos + (GRID_Y*2) - 1 < GRID_SIZE && board[pos + (GRID_Y*2) - 1] <= 0) {
-                num++;
-                possible_moves[pos + (GRID_Y*2) - 1] = true; // bottom left
-            }
-
-            if (x < GRID_X - 2 && pos + (GRID_Y) + 2 < GRID_SIZE && board[pos + (GRID_Y) + 2] <= 0) {
-                num++;
-                possible_moves[pos + (GRID_Y) + 2] = true; // lower right
-            }
-            if (x > 1 && pos + (GRID_Y) - 2 < GRID_SIZE && board[pos + (GRID_Y) - 2] <= 0) {
-                num++;
-                possible_moves[pos + (GRID_Y) - 2] = true; // lower left
+        // wide
+        for (int i = y - 1; i <= y + 1; i = i + 2) {
+            for (int j = x - 2; j <= x + 2; j = j + 4) {
+                if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+                if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
+                    num++;
+                    possible_moves[i * GRID_Y + j] = true;
+                }
+                if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
+                    num++;
+                    possible_moves[i * GRID_Y + j] = true;
+                }
             }
         }
-        else if (type == b_PAWN) {
-            if (pos >= 0 && pos < GRID_SIZE) {
-                if (x != GRID_X - 1 && pos - (GRID_Y*2) + 1 >= 0 && board[pos - (GRID_Y*2) + 1] >= 0) {
+        // long 
+        for (int i = y - 2; i <= y + 2; i = i + 4) {
+            for (int j = x - 1; j <= x + 1; j = j + 2) {
+                if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+                if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
                     num++;
-                    possible_moves[pos - (GRID_Y*2) + 1] = true; // top right
+                    possible_moves[i * GRID_Y + j] = true;
                 }
-                if (x != 0 && pos - (GRID_Y*2) - 1 >= 0 && board[pos - (GRID_Y*2) - 1] >= 0) {
+                if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
                     num++;
-                    possible_moves[pos - (GRID_Y*2) - 1] = true; // top left
-                }
-
-                if (x < GRID_X - 2 && pos - (GRID_Y) + 2 >= 0 && board[pos - (GRID_Y) + 2] >= 0) {
-                    num++;
-                    possible_moves[pos - (GRID_Y) + 2] = true; // upper right
-                }
-                if (x > 1 && pos - (GRID_Y) - 2 >= 0 && board[pos - (GRID_Y) - 2] >= 0) {
-                    num++;
-                    possible_moves[pos - (GRID_Y) - 2] = true; // upper left
-                }
-
-                if (x != GRID_X - 1 && pos + (GRID_Y*2) + 1 < GRID_SIZE && board[pos + (GRID_Y*2) + 1] >= 0) {
-                    num++;
-                    possible_moves[pos + (GRID_Y*2) + 1] = true; // bottom right
-
-                }
-                if (x != 0 && pos + (GRID_Y*2) - 1 < GRID_SIZE && board[pos + (GRID_Y*2) - 1] >= 0) {
-                    num++;
-                    possible_moves[pos + (GRID_Y*2) - 1] = true; // bottom left
-                }
-
-                if (x < GRID_X - 2 && pos + (GRID_Y) + 2 < GRID_SIZE && board[pos + (GRID_Y) + 2] >= 0) {
-                    num++;
-                    possible_moves[pos + (GRID_Y) + 2] = true; // lower right
-                }
-                if (x > 1 && pos + (GRID_Y) - 2 < GRID_SIZE && board[pos + (GRID_Y) - 2] >= 0) {
-                    num++;
-                    possible_moves[pos + (GRID_Y) - 2] = true; // lower left
+                    possible_moves[i * GRID_Y + j] = true;
                 }
             }
         }
