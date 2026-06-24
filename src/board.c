@@ -3,8 +3,9 @@
 #include "piece.h"
 #include "stdlib.h"
 
-e_piece board[GRID_X * GRID_Y] = {0};
-bool possible_moves[GRID_X * GRID_Y] = {0};
+#define BOARD_SIZE (GRID_X * GRID_Y)
+e_piece board[BOARD_SIZE ] = {0};
+bool possible_moves[BOARD_SIZE ] = {0};
 
 int move_pawn(int x, int y, e_piece type);
 int move_knight(int x, int y, e_piece type);
@@ -42,9 +43,15 @@ int find_possible_moves(int x, int y, e_piece type)
         case b_ROOK: {
             num = move_rook(x, y, type);
         } break;
-        case w_QUEEN:
+        case w_QUEEN: {
+            num  = move_rook(x, y, w_ROOK);
+            num += move_bishop(x, y, w_BISHOP);
+            num += move_king(x, y, w_KING);
+        } break;
         case b_QUEEN: {
-            num = move_queen(x, y, type);
+            num  = move_rook(x, y, b_ROOK);
+            num += move_bishop(x, y, b_BISHOP);
+            num += move_king(x, y, b_KING);
         } break;
 
         case w_KING: 
@@ -59,43 +66,42 @@ int move_pawn(int x, int y, e_piece type)
 {
     int num = 0;
     int pos = y * GRID_Y + x;
-    if (pos >= GRID_X && pos < GRID_SIZE) {
-        if (type == w_PAWN) {
-            if (board[pos - GRID_X] == 0) {
-                num++;
-                possible_moves[pos - GRID_X] = true;
-                if (board[pos - (GRID_X*2)] == 0 && y == 6) {
-                    possible_moves[pos - (GRID_X*2)] = true;
-                    num++;
-                }
-            }
-            if (board[pos - GRID_X + 1] < 0 && x != GRID_X - 1) {
-                possible_moves[pos - GRID_X + 1] = true;
-                num++;
-            }
-            if (board[pos - GRID_X - 1] < 0 && x != 0) {
-                possible_moves[pos - GRID_X - 1] = true;
+    if (pos < 0 && pos >= BOARD_SIZE) return -1;
+    if (type == w_PAWN) {
+        if (board[pos - GRID_X] == 0) {
+            num++;
+            possible_moves[pos - GRID_X] = true;
+            if (board[pos - (GRID_X*2)] == 0 && y == 6) {
+                possible_moves[pos - (GRID_X*2)] = true;
                 num++;
             }
         }
-        else if (type == b_PAWN) {
-            if (pos >= GRID_X && pos < GRID_SIZE - GRID_X) {
-                if (board[pos + GRID_X] == 0) {
-                    possible_moves[pos + GRID_X] = true;
+        if (board[pos - GRID_X + 1] < 0 && x != GRID_X - 1) {
+            possible_moves[pos - GRID_X + 1] = true;
+            num++;
+        }
+        if (board[pos - GRID_X - 1] < 0 && x != 0) {
+            possible_moves[pos - GRID_X - 1] = true;
+            num++;
+        }
+    }
+    else if (type == b_PAWN) {
+        if (pos >= GRID_X && pos < GRID_SIZE - GRID_X) {
+            if (board[pos + GRID_X] == 0) {
+                possible_moves[pos + GRID_X] = true;
+                num++;
+                if (board[pos + (GRID_X*2)] == 0 && y == 1) {
+                    possible_moves[pos + (GRID_X*2)] = true;
                     num++;
-                    if (board[pos + (GRID_X*2)] == 0 && y == 1) {
-                        possible_moves[pos + (GRID_X*2)] = true;
-                        num++;
-                    }
                 }
-                if (board[pos + GRID_X + 1] > 0 && x != GRID_X - 1) {
-                    num++;
-                    possible_moves[pos + GRID_X + 1] = true;
-                }
-                if (board[pos + GRID_X - 1] > 0 && x != 0) {
-                    num++;
-                    possible_moves[pos + GRID_X - 1] = true;
-                }
+            }
+            if (board[pos + GRID_X + 1] > 0 && x != GRID_X - 1) {
+                num++;
+                possible_moves[pos + GRID_X + 1] = true;
+            }
+            if (board[pos + GRID_X - 1] > 0 && x != 0) {
+                num++;
+                possible_moves[pos + GRID_X - 1] = true;
             }
         }
     }
@@ -106,33 +112,32 @@ int move_knight(int x, int y, e_piece type)
 {
     int num = 0;
     int pos = y * GRID_Y + x;
-    if (pos >= 0 && pos < GRID_SIZE) {
-        // wide
-        for (int i = y - 1; i <= y + 1; i = i + 2) {
-            for (int j = x - 2; j <= x + 2; j = j + 4) {
-                if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-                if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
-                    num++;
-                    possible_moves[i * GRID_Y + j] = true;
-                }
-                if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
-                    num++;
-                    possible_moves[i * GRID_Y + j] = true;
-                }
+    if (pos < 0 && pos >= BOARD_SIZE) return -1;
+    // wide
+    for (int i = y - 1; i <= y + 1; i = i + 2) {
+        for (int j = x - 2; j <= x + 2; j = j + 4) {
+            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+            if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
+                num++;
+                possible_moves[i * GRID_Y + j] = true;
+            }
+            if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
+                num++;
+                possible_moves[i * GRID_Y + j] = true;
             }
         }
-        // long 
-        for (int i = y - 2; i <= y + 2; i = i + 4) {
-            for (int j = x - 1; j <= x + 1; j = j + 2) {
-                if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-                if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
-                    num++;
-                    possible_moves[i * GRID_Y + j] = true;
-                }
-                if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
-                    num++;
-                    possible_moves[i * GRID_Y + j] = true;
-                }
+    }
+    // long 
+    for (int i = y - 2; i <= y + 2; i = i + 4) {
+        for (int j = x - 1; j <= x + 1; j = j + 2) {
+            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+            if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
+                num++;
+                possible_moves[i * GRID_Y + j] = true;
+            }
+            if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
+                num++;
+                possible_moves[i * GRID_Y + j] = true;
             }
         }
     }
@@ -254,6 +259,22 @@ int move_queen(int x, int y, e_piece type)
 int move_king(int x, int y, e_piece type)
 {
     int num = 0;
+    // puts("==============");
+    // printf("y = %d\n", i);
+    // printf("    x = %d\n", j);
+    for (int i = y - 1; i <= y + 1; i++) {
+        for (int j = x - 1; j <= x + 1; j++) {
+            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+            if (type == w_KING && board[i * GRID_Y + j] <= 0) {
+                num++;
+                possible_moves[i * GRID_Y + j] = true;
+            }
+            if (type == b_KING && board[i * GRID_Y + j] >= 0) {
+                num++;
+                possible_moves[i * GRID_Y + j] = true;
+            }
+        }
+    }
     return num;
 }
 

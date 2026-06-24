@@ -55,7 +55,7 @@ void draw_pieces(Texture* pieces)
             };
 #ifdef DEBUG
             if (board[i * GRID_X + j] != e_EMPTY)
-                DrawText(TextFormat("x: %d y: %d", j, i), pos.x + (128 * j), pos.y + (128 * i), 32, RED);
+                DrawText(TextFormat("x: %d y: %d", j, i), pos.x + (128 * j), pos.y + (128 * i), 24, RED);
 #endif // DEBUG
             switch (board[i * GRID_X + j]) {
                 case e_EMPTY: {
@@ -121,7 +121,11 @@ int main(int argc, char** argv)
         }
     }
     else {
+#ifdef DEBUG
+        init_board("K5Nk/8/8/8/3kQ3/8/8/k6K");
+#else
         init_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+#endif /* ifdef DEBUG */
     }
 
     InitWindow(WIDTH, HEIGHT, "Chess");
@@ -142,7 +146,6 @@ int main(int argc, char** argv)
     int selected_y = 0;
     e_piece selected_type = e_EMPTY;
 
-
     while (!WindowShouldClose()) { 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             Vector2 mouse_pos = GetMousePosition();
@@ -151,6 +154,21 @@ int main(int argc, char** argv)
 
             switch (state) {
                 case NONE: {
+#ifdef DEBUG
+                    if (board[y * GRID_X + x] == 0) {
+                        state = NONE;
+                        selected_type = e_EMPTY;
+                        selected_x = 0;
+                        selected_y = 0;
+                        reset_possible_moves();
+                    }
+                    else {
+                        state = SELECT;
+                        selected_x = x;
+                        selected_y = y;
+                        selected_type = board[y * GRID_X + x];
+                    }
+#else
                     if ((board[y * GRID_X + x] == 0 
                         || (board[y * GRID_X + x] < 0 && turn == t_WHITE) 
                         || (board[y * GRID_X + x] > 0 && turn == t_BLACK))) {
@@ -167,9 +185,35 @@ int main(int argc, char** argv)
                         selected_y = y;
                         selected_type = board[y * GRID_X + x];
                     }
+#endif /* ifdef DEBUG */
                 } break;
-            
                 case SELECT: {
+#ifdef DEBUG
+                    if (possible_moves[y * GRID_X + x]) {
+                        state = NONE;
+                        board[y * GRID_X + x] != e_EMPTY ? PlaySound(capture_sound) : PlaySound(move_sound);
+                        board[y * GRID_X + x] = board[selected_y * GRID_X + selected_x];
+                        board[selected_y * GRID_X + selected_x] = e_EMPTY;
+                        turn = !turn;
+
+                        selected_type = e_EMPTY;
+                        selected_x = 0;
+                        selected_y = 0;
+                        reset_possible_moves();
+                    }
+                    else {
+                        state = NONE;
+                    }
+#else
+                    if ((selected_y == y && selected_x == x) && ((board[y * GRID_X + x] > 0 && turn == t_WHITE) 
+                        || (board[y * GRID_X + x] < 0 && turn == t_BLACK))) {
+                        state = NONE;
+                        selected_type = e_EMPTY;
+                        selected_x = 0;
+                        selected_y = 0;
+                        reset_possible_moves();
+                        break;
+                    }
                     if ((board[y * GRID_X + x] > 0 && turn == t_WHITE) 
                         || (board[y * GRID_X + x] < 0 && turn == t_BLACK)) {
                         state = SELECT;
@@ -200,6 +244,7 @@ int main(int argc, char** argv)
                         selected_y = 0;
                         reset_possible_moves();
                     }
+#endif /* ifdef DEBUG */
                 } break;
             }
         }
@@ -214,11 +259,8 @@ int main(int argc, char** argv)
                 } break;
 
                 case SELECT: {
+                    // TODO: compute this once mayhaps
                     int num = find_possible_moves(selected_x, selected_y, selected_type);
-                    if (num <= 0) {
-                        state = NONE;
-                        break;
-                    }
                     for (size_t i = 0; i < GRID_Y; i++) {
                         for (size_t j = 0; j < GRID_X; j++) {
                             if (possible_moves[i * GRID_X + j]) {
