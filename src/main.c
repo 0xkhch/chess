@@ -9,6 +9,10 @@
 //TODO: make these dynamic ?
 #define LIGHT_SHADE (Color){.r = 0xFF, .g = 0xCF, .b = 0x9F, .a = 0xFF}
 #define DARK_SHADE (Color){.r = 0xD2, .g = 0x8C, .b = 0x45, .a = 0xFF}
+
+#define t_WHITE false
+#define t_BLACK true
+
 bool turn = false;
 
 void draw_board(void)
@@ -145,47 +149,58 @@ int main(int argc, char** argv)
             int x = (mouse_pos.x / CELL_X);
             int y = (mouse_pos.y / CELL_Y);
 
-            if ((board[y * GRID_X + x] != 0 && state == NONE) || (board[y * GRID_X + x] != 0 && state == SELECT)) {
-                reset_possible_moves();
-                if ((board[y * GRID_X + x] < 0 && turn == true) || (board[y * GRID_X + x] > 0 && turn == false)) {
-                    state = SELECT;
-                    selected_x = x;
-                    selected_y = y;
-                    selected_type = board[y * GRID_X + x];
-                }
-                else {
-                    selected_x = 0;
-                    selected_y = 0;
-                    state = NONE;
-                    selected_type = e_EMPTY;
-#ifdef DEBUG
-                    state = SELECT;
-                    selected_x = x;
-                    selected_y = y;
-                    selected_type = board[y * GRID_X + x];
-#endif // DEBUG
-                }
-            }
-            else if (state == SELECT && possible_moves[y * GRID_X + x]) {
-                if (possible_moves[y * GRID_X + x]) {
-                    if (board[y * GRID_X + x] != e_EMPTY) {
-                        PlaySound(capture_sound);
+            switch (state) {
+                case NONE: {
+                    if ((board[y * GRID_X + x] == 0 
+                        || (board[y * GRID_X + x] < 0 && turn == t_WHITE) 
+                        || (board[y * GRID_X + x] > 0 && turn == t_BLACK))) {
+                        state = NONE;
+                        selected_type = e_EMPTY;
+                        selected_x = 0;
+                        selected_y = 0;
+                        reset_possible_moves();
                     }
-                    else {
-                        PlaySound(move_sound);
+                    else if ((board[y * GRID_X + x] > 0 && turn == t_WHITE) 
+                            || (board[y * GRID_X + x] < 0 && turn == t_BLACK)) {
+                        state = SELECT;
+                        selected_x = x;
+                        selected_y = y;
+                        selected_type = board[y * GRID_X + x];
                     }
-                    board[y * GRID_X + x] = board[selected_y * GRID_X + selected_x];
-                    board[selected_y * GRID_X + selected_x] = e_EMPTY;
-                    turn = !turn;
-                }
-                selected_x = 0;
-                selected_y = 0;
-                state = NONE;
-                selected_type = e_EMPTY;
-                reset_possible_moves();
-            }
-            else {
-                state = NONE;
+                } break;
+            
+                case SELECT: {
+                    if ((board[y * GRID_X + x] > 0 && turn == t_WHITE) 
+                        || (board[y * GRID_X + x] < 0 && turn == t_BLACK)) {
+                        state = SELECT;
+                        selected_x = x;
+                        selected_y = y;
+                        selected_type = board[y * GRID_X + x];
+                        reset_possible_moves();
+                    }
+                    else if (!possible_moves[y * GRID_X + x] && ((board[y * GRID_X + x] < 0 && turn == t_WHITE) 
+                            || (board[y * GRID_X + x] > 0 && turn == t_BLACK))) {
+                        state = NONE;
+                        selected_type = e_EMPTY;
+                        selected_x = 0;
+                        selected_y = 0;
+                        reset_possible_moves();
+                    }
+                    else if ((possible_moves[y * GRID_X + x] 
+                            && ((board[y * GRID_X + x] <= 0 && turn == t_WHITE) 
+                            || (board[y * GRID_X + x] >= 0 && turn == t_BLACK)))) {
+                        state = NONE;
+                        board[y * GRID_X + x] != e_EMPTY ? PlaySound(capture_sound) : PlaySound(move_sound);
+                        board[y * GRID_X + x] = board[selected_y * GRID_X + selected_x];
+                        board[selected_y * GRID_X + selected_x] = e_EMPTY;
+                        turn = !turn;
+
+                        selected_type = e_EMPTY;
+                        selected_x = 0;
+                        selected_y = 0;
+                        reset_possible_moves();
+                    }
+                } break;
             }
         }
         BeginDrawing();
