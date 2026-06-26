@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "board.h"
 
+// textures
 #include "pieces.h"
 #include "move.h"
 #include "capture.h"
@@ -9,112 +10,120 @@
 typedef struct global_state {
     int selected_x;
     int selected_y;
+    int mouse_pos_x;
+    int mouse_pos_y;
+    int mouse_pos;
     e_piece selected_type;
     e_state state;
     bool turn;
 } global_state_t;
+global_state_t global = {};
 
 //TODO: make these dynamic ?
 #define LIGHT_SHADE (Color){.r = 0xFF, .g = 0xCF, .b = 0x9F, .a = 0xFF}
 #define DARK_SHADE (Color){.r = 0xD2, .g = 0x8C, .b = 0x45, .a = 0xFF}
 
+#define LIGHT_GREEN (Color){.r = 0xAE, .g = 0xB1, .b = 0x87, .a = 0xFF}
+#define DARK_GREEN (Color){.r = 0x84, .g = 0x79, .b = 0x4e, .a = 0xFF}
+
 #define t_WHITE false
 #define t_BLACK true
 
 
-void draw_board(void)
+Rectangle type_to_rect(e_piece type)
 {
-    for (size_t i = 0; i < WIDTH; i++) {
-        size_t tile_y = (i / (CELL_X)) % 2;
-        for (size_t j = 0; j < HEIGHT; j++) {
-            size_t tile_x = (j / (CELL_X)) % 2;
-            if ((tile_x ^ tile_y) == 0) {
-                DrawPixel(j, i, LIGHT_SHADE);
-            }
-            else {
-                DrawPixel(j, i, DARK_SHADE);
-            }
-        }
+#define PIECE_WIDTH ((float)768/6)
+#define PIECE_HEIGHT ((float)256/2)
+
+    switch (type) {
+        case e_EMPTY: {
+            return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case b_PAWN: {
+            return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case b_KNIGHT: {
+            return (Rectangle){128.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case b_BISHOP: {
+            return (Rectangle){256.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case b_ROOK: {
+            return (Rectangle){384.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case b_QUEEN: {
+            return (Rectangle){512.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case b_KING: {
+            return (Rectangle){640.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+
+        case w_PAWN: {
+            return (Rectangle){0.0f,   128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case w_KNIGHT: {
+            return (Rectangle){128.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case w_BISHOP: {
+            return (Rectangle){256.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case w_ROOK: {
+            return (Rectangle){384.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case w_QUEEN: {
+            return (Rectangle){512.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
+        case w_KING: {
+            return (Rectangle){640.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+        } break;
     }
+    return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT}; // suppress stupid warning
 }
-void draw_pieces(Texture2D* pieces)
+
+void draw_board(Texture2D* pieces)
 {
-#define TEXTURE_WIDTH_COUNT (6)
-#define TEXTURE_HEIGHT_COUNT (2)
-    Rectangle b_pawn   = {0.0f, 0.0f,   (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle b_knight = {128.0f, 0.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle b_bishop = {256.0f, 0.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle b_rook   = {384.0f, 0.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle b_queen  = {512.0f, 0.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle b_king   = {640.0f, 0.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-
-    Rectangle w_pawn   = {0.0f,   128.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle w_knight = {128.0f, 128.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle w_bishop = {256.0f, 128.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle w_rook   = {384.0f, 128.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle w_queen  = {512.0f, 128.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-    Rectangle w_king   = {640.0f, 128.0f, (float)pieces->width/TEXTURE_WIDTH_COUNT, (float)pieces->height/TEXTURE_HEIGHT_COUNT};
-
     Rectangle texture_dest = {.x = 0.0f, .y = 0.0f, .width = 64.0f, .height = 64.0f};
     for (int i = 0; i < GRID_Y; i++) {
         for (int j = 0; j < GRID_X; j++) {
-            Vector2 pos = (Vector2) {
-                .x = (j * CELL_X) - (128 * j), 
-                .y = (i * CELL_Y) - (128 * i)
-            };
-#ifdef DEBUG
-            if (board[i * GRID_X + j] != e_EMPTY)
-                DrawText(TextFormat("x: %d y: %d", j, i), pos.x + (128 * j), pos.y + (128 * i), 24, RED);
-#endif // DEBUG
-            switch (board[i * GRID_X + j]) {
-                case e_EMPTY: {
-                    continue;
-                } break;
-                case w_PAWN: {
-                    DrawTexturePro(*pieces, w_pawn, texture_dest, pos, 0, WHITE);
-                } break;
-                case w_KNIGHT: {
-                    DrawTexturePro(*pieces, w_knight, texture_dest, pos, 0, WHITE);
-                } break;
-                case w_BISHOP: {
-                    DrawTexturePro(*pieces, w_bishop, texture_dest, pos, 0, WHITE);
-                } break;
-                case w_ROOK: {
-                    DrawTexturePro(*pieces, w_rook, texture_dest, pos, 0, WHITE);
-                } break;
-                case w_QUEEN: {
-                    DrawTexturePro(*pieces, w_queen, texture_dest, pos, 0, WHITE);
-                } break;
-                case w_KING: {
-                    DrawTexturePro(*pieces, w_king, texture_dest, pos, 0, WHITE);
-                } break;
+            // draw board
+            bool is_light = ((j + i) % 2 == 0);
 
-                case b_PAWN: {
-                    DrawTexturePro(*pieces, b_pawn, texture_dest, pos, 0, WHITE);
-                } break;
-                case b_KNIGHT: {
-                    DrawTexturePro(*pieces, b_knight, texture_dest, pos, 0, WHITE);
-                } break;
-                case b_BISHOP: {
-                    DrawTexturePro(*pieces, b_bishop, texture_dest, pos, 0, WHITE);
-                } break;
-                case b_ROOK: {
-                    DrawTexturePro(*pieces, b_rook, texture_dest, pos, 0, WHITE);
-                } break;
-                case b_QUEEN: {
-                    DrawTexturePro(*pieces, b_queen, texture_dest, pos, 0, WHITE);
-                } break;
-                case b_KING: {
-                    DrawTexturePro(*pieces, b_king, texture_dest, pos, 0, WHITE);
-                } break;
+            bool possible_move = possible_moves[i * GRID_Y + j];
+            if(global.state == SELECT && possible_move && global.mouse_pos_x == j && global.mouse_pos_y == i) {
+                DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_GREEN: DARK_GREEN);
             }
-        } 
+            else {
+                DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_SHADE : DARK_SHADE);
+            }
+            
+            // draw pieces
+            e_piece type = board[i * GRID_X + j];
+            if (type != e_EMPTY) {
+                Vector2 pos = (Vector2) {
+                    .x = (j * CELL_X) - (128 * j), 
+                    .y = (i * CELL_Y) - (128 * i)
+                };
+#ifdef DEBUG
+                DrawText(TextFormat("x: %d y: %d", j, i), j * CELL_X, i * CELL_Y, 16, RED);
+#endif /* ifdef DEBUG */
+                DrawTexturePro(*pieces, type_to_rect(type), texture_dest, pos, 0, WHITE);
+            }
+
+            // draw circles
+            if (possible_move) {
+#ifdef DEBUG
+                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, RED);
+                DrawText(TextFormat("x: %d y: %d", j, i), j * CELL_X, i * CELL_Y, 16, RED);
+#else
+                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, DARK_GREEN);
+#endif /* ifdef DEBUG */
+            }
+        }
     }
 }
 
 int main(int argc, char** argv)
 {
-    global_state_t global = {};
     if (argc > 3) {
         fprintf(stderr, "%s\n", "Too many arguments...");
         return 1;
@@ -148,12 +157,19 @@ int main(int argc, char** argv)
     Sound move_sound = LoadSoundFromWave(move_wav);
     Sound capture_sound = LoadSoundFromWave(capture_wav);
 
-    while (!WindowShouldClose()) { 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            Vector2 mouse_pos = GetMousePosition();
-            int x = (mouse_pos.x / CELL_X);
-            int y = (mouse_pos.y / CELL_Y);
+    bool hovering_possible= false;
+    int x = 0;
+    int y = 0;
 
+    SetTargetFPS(165);
+    while (!WindowShouldClose()) { 
+        Vector2 mouse_pos = GetMousePosition();
+        x = (mouse_pos.x / CELL_X);
+        y = (mouse_pos.y / CELL_Y);
+        global.mouse_pos_x = x;
+        global.mouse_pos_y = y;
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             switch (global.state) {
                 case NONE: {
 #ifdef DEBUG
@@ -213,7 +229,6 @@ int main(int argc, char** argv)
                         global.selected_type = e_EMPTY;
                         global.selected_x = 0;
                         global.selected_y = 0;
-                        reset_possible_moves();
                         break;
                     }
                     if ((board[y * GRID_X + x] > 0 && global.turn == t_WHITE) 
@@ -222,7 +237,6 @@ int main(int argc, char** argv)
                         global.selected_x = x;
                         global.selected_y = y;
                         global.selected_type = board[y * GRID_X + x];
-                        reset_possible_moves();
                     }
                     else if (!possible_moves[y * GRID_X + x] && ((board[y * GRID_X + x] < 0 && global.turn == t_WHITE) 
                             || (board[y * GRID_X + x] > 0 && global.turn == t_BLACK))) {
@@ -230,7 +244,6 @@ int main(int argc, char** argv)
                         global.selected_type = e_EMPTY;
                         global.selected_x = 0;
                         global.selected_y = 0;
-                        reset_possible_moves();
                     }
                     else if ((possible_moves[y * GRID_X + x] 
                             && ((board[y * GRID_X + x] <= 0 && global.turn == t_WHITE) 
@@ -243,33 +256,28 @@ int main(int argc, char** argv)
                         global.selected_type = e_EMPTY;
                         global.selected_x = 0;
                         global.selected_y = 0;
-                        reset_possible_moves();
                     }
+                    reset_possible_moves();
 #endif /* ifdef DEBUG */
+                } break;
+                case HOLD: {
                 } break;
             }
         }
         BeginDrawing();
+            draw_board(&pieces);
             ClearBackground(WHITE);
-            draw_board();
-            draw_pieces(&pieces);
             switch (global.state) {
                 case NONE: {
                 } break;
                 case SELECT: {
                     // TODO: compute this once mayhaps
                     int num = find_possible_moves(global.selected_x, global.selected_y, global.selected_type);
-                    for (size_t i = 0; i < GRID_Y; i++) {
-                        for (size_t j = 0; j < GRID_X; j++) {
-                            if (possible_moves[i * GRID_X + j]) {
-                                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, RED);
-                            }
-                        }
-                    }
                 }; break;
                 default: {
                 } break;
             }
+            DrawFPS(0, 0);
         EndDrawing();
     }
     UnloadTexture(pieces);

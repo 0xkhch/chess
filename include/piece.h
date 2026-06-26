@@ -4,6 +4,7 @@
 typedef enum {
     NONE,
     SELECT,
+    HOLD,
 } e_state;
 
 

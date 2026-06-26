@@ -11,7 +11,6 @@ int move_pawn(int x, int y, e_piece type);
 int move_knight(int x, int y, e_piece type);
 int move_bishop(int x, int y, e_piece type);
 int move_rook(int x, int y, e_piece type);
-int move_queen(int x, int y, e_piece type);
 int move_king(int x, int y, e_piece type);
 
 void reset_possible_moves(void)
@@ -247,12 +246,6 @@ int move_rook(int x, int y, e_piece type)
         }
         if (board[y * GRID_Y + i] != 0) break;
     }
-    return num;
-}
-
-int move_queen(int x, int y, e_piece type)
-{
-    int num = 0;
     return num;
 }
 
