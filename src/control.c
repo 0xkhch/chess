@@ -71,8 +71,8 @@ void control(Sound* move_sound, Sound* capture_sound, int x, int y) {
                 global.selected_y = y;
                 global.selected_type = board[y * GRID_X + x];
             }
-            else if (!get_bit(possible_moves, x, y) && ((board[y * GRID_X + x] < 0 && global.turn == t_WHITE) 
-                    || (board[y * GRID_X + x] > 0 && global.turn == t_BLACK))) {
+            else if (!get_bit(possible_moves, x, y) && ((board[y * GRID_X + x] <= 0 && global.turn == t_WHITE) 
+                    || (board[y * GRID_X + x] >= 0 && global.turn == t_BLACK))) {
                 global.state = NONE;
                 global.selected_type = e_EMPTY;
                 global.selected_x = 0;
