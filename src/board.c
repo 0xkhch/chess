@@ -8,10 +8,6 @@ e_piece board[BOARD_SIZE] = {0};
 uint64_t possible_moves = 0;
 uint64_t white_heatmap = 0;
 uint64_t black_heatmap = 0;
-bool white_heatmap[BOARD_SIZE] = {0};
-bool black_heatmap[BOARD_SIZE] = {0};
-
-uint64_t w_KNIGHT_moves = 0;
 
 int move_pawn(int x, int y, e_piece type);
 int move_knight(int x, int y, e_piece type);
@@ -38,13 +34,10 @@ void reset_possible_moves(void)
 
 void reset_heatmap(bool type)
 {
-    if (type) {
-    }
-    else {
-        for (size_t i = 0; i < GRID_SIZE; i++) {
-            white_heatmap[i] = false;
-        }
-    }
+    if (type)
+        black_heatmap = 0;
+    else
+     white_heatmap = 0;
 }
 int find_possible_moves(int x, int y, e_piece type)
 {
