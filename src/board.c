@@ -3,9 +3,13 @@
 #include "piece.h"
 #include "stdlib.h"
 
-#define BOARD_SIZE (GRID_X * GRID_Y)
-e_piece board[BOARD_SIZE ] = {0};
-bool possible_moves[BOARD_SIZE ] = {0};
+e_piece board[BOARD_SIZE] = {0};
+
+uint64_t possible_moves = 0;
+bool white_heatmap[BOARD_SIZE] = {0};
+bool black_heatmap[BOARD_SIZE] = {0};
+
+uint64_t w_KNIGHT_moves = 0;
 
 int move_pawn(int x, int y, e_piece type);
 int move_knight(int x, int y, e_piece type);
@@ -13,10 +17,31 @@ int move_bishop(int x, int y, e_piece type);
 int move_rook(int x, int y, e_piece type);
 int move_king(int x, int y, e_piece type);
 
+void print_board(uint64_t x) {
+    puts("--------------");
+    for (uint64_t i = 0; i < 8; i++) {
+        for (uint64_t j = 0; j < 8; j++) {
+            uint64_t shift_amount = (63 - (i * 8 + j));
+            printf("%ld ", ((x >> shift_amount) & 1UL));
+        }
+        printf("\n");
+    }
+}
+
 void reset_possible_moves(void)
 {
-    for (size_t i = 0; i < GRID_Y * GRID_X; i++) {
-        possible_moves[i] = false;
+    possible_moves = 0;
+}
+
+
+void reset_heatmap(bool type)
+{
+    if (type) {
+    }
+    else {
+        for (size_t i = 0; i < GRID_SIZE; i++) {
+            white_heatmap[i] = false;
+        }
     }
 }
 int find_possible_moves(int x, int y, e_piece type)
@@ -69,38 +94,40 @@ int move_pawn(int x, int y, e_piece type)
     if (type == w_PAWN) {
         if (board[pos - GRID_X] == 0) {
             num++;
-            possible_moves[pos - GRID_X] = true;
+            set_bit(possible_moves, x, (y - 1));
             if (board[pos - (GRID_X*2)] == 0 && y == 6) {
-                possible_moves[pos - (GRID_X*2)] = true;
+                set_bit(possible_moves, x, (y - 2));
                 num++;
             }
         }
         if (board[pos - GRID_X + 1] < 0 && x != GRID_X - 1) {
-            possible_moves[pos - GRID_X + 1] = true;
+            set_bit(possible_moves, (x + 1), (y - 1));
             num++;
         }
         if (board[pos - GRID_X - 1] < 0 && x != 0) {
-            possible_moves[pos - GRID_X - 1] = true;
+            set_bit(possible_moves, (x - 1), (y - 1));
             num++;
         }
+        print_board(possible_moves);
+        exit(0);
     }
     else if (type == b_PAWN) {
         if (pos >= GRID_X && pos < GRID_SIZE - GRID_X) {
             if (board[pos + GRID_X] == 0) {
-                possible_moves[pos + GRID_X] = true;
+                set_bit(possible_moves, x, (y + 1));
                 num++;
                 if (board[pos + (GRID_X*2)] == 0 && y == 1) {
-                    possible_moves[pos + (GRID_X*2)] = true;
+                    set_bit(possible_moves, x, (y + 2));
                     num++;
                 }
             }
             if (board[pos + GRID_X + 1] > 0 && x != GRID_X - 1) {
                 num++;
-                possible_moves[pos + GRID_X + 1] = true;
+                set_bit(possible_moves, (x + 1), (y + 2));
             }
             if (board[pos + GRID_X - 1] > 0 && x != 0) {
                 num++;
-                possible_moves[pos + GRID_X - 1] = true;
+                set_bit(possible_moves, (x - 1), (y + 2));
             }
         }
     }
@@ -118,11 +145,11 @@ int move_knight(int x, int y, e_piece type)
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
                 num++;
-                possible_moves[i * GRID_Y + j] = true;
+                set_bit(possible_moves, j, i);
             }
             if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
                 num++;
-                possible_moves[i * GRID_Y + j] = true;
+                set_bit(possible_moves, j, i);
             }
         }
     }
@@ -132,11 +159,11 @@ int move_knight(int x, int y, e_piece type)
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             if (type == w_KNIGHT && board[i * GRID_Y + j] <= 0) {
                 num++;
-                possible_moves[i * GRID_Y + j] = true;
+                set_bit(possible_moves, j, i);
             }
             if (type == b_KNIGHT && board[i * GRID_Y + j] >= 0) {
                 num++;
-                possible_moves[i * GRID_Y + j] = true;
+                set_bit(possible_moves, j, i);
             }
         }
     }
@@ -151,10 +178,10 @@ int move_bishop(int x, int y, e_piece type)
         num++;
         int curr = i * GRID_Y + (x + (y - i));
         if (type == w_BISHOP) {
-            possible_moves[curr] = board[curr] <= 0 ? true : false;
+            board[curr] <= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         else if (type == b_BISHOP) {
-            possible_moves[curr] = board[curr] >= 0 ? true : false;
+            board[curr] >= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         if (board[curr] != 0) break;
     }
@@ -164,10 +191,10 @@ int move_bishop(int x, int y, e_piece type)
         num++;
         int curr = i * GRID_Y + (x - (y - i));
         if (type == w_BISHOP) {
-            possible_moves[curr] = board[curr] <= 0 ? true : false;
+            board[curr] <= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         else if (type == b_BISHOP) {
-            possible_moves[curr] = board[curr] >= 0 ? true : false;
+            board[curr] >= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         if (board[curr] != 0) break;
     }
@@ -177,10 +204,10 @@ int move_bishop(int x, int y, e_piece type)
         num++;
         int curr = i * GRID_Y + (x + (i - y));
         if (type == w_BISHOP) {
-            possible_moves[curr] = board[curr] <= 0 ? true : false;
+            board[curr] <= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         else if (type == b_BISHOP) {
-            possible_moves[curr] = board[curr] >= 0 ? true : false;
+            board[curr] >= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         if (board[curr] != 0) break;
     }
@@ -190,10 +217,10 @@ int move_bishop(int x, int y, e_piece type)
         num++;
         int curr = i * GRID_Y + (x - (i - y));
         if (type == w_BISHOP) {
-            possible_moves[curr] = board[curr] <= 0 ? true : false;
+            board[curr] <= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         else if (type == b_BISHOP) {
-            possible_moves[curr] = board[curr] >= 0 ? true : false;
+            board[curr] >= 0 ? set_bit_offset(possible_moves, curr) : unset_bit_offset(possible_moves, curr);
         }
         if (board[curr] != 0) break;
     }
@@ -207,20 +234,20 @@ int move_rook(int x, int y, e_piece type)
     for (int i = y - 1; i >= 0; i--) {
         num++;
         if (type == w_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] <= 0 ? true : false;
+            board[i * GRID_Y + x] <= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         else if (type == b_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] >= 0 ? true : false;
+            board[i * GRID_Y + x] >= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         if (board[i * GRID_Y + x] != 0) break;
     }
     for (int i = x + 1; i < GRID_X; i++) {
         num++;
         if (type == w_ROOK) {
-            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] <= 0 ? true : false;
+            board[i * GRID_Y + x] <= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         else if (type == b_ROOK) {
-            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] >= 0 ? true : false;
+            board[i * GRID_Y + x] >= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         if (board[y * GRID_Y + i] != 0) break;
     }
@@ -228,10 +255,10 @@ int move_rook(int x, int y, e_piece type)
     for (int i = y + 1; i < GRID_Y; i++) {
         num++;
         if (type == w_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] <= 0 ? true : false;
+            board[i * GRID_Y + x] <= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         else if (type == b_ROOK) {
-            possible_moves[i * GRID_Y + x] = board[i * GRID_Y + x] >= 0 ? true : false;
+            board[i * GRID_Y + x] >= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         if (board[i * GRID_Y + x] != 0) break;
     }
@@ -239,10 +266,10 @@ int move_rook(int x, int y, e_piece type)
     for (int i = x - 1; i >= 0; i--) {
         num++;
         if (type == w_ROOK) {
-            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] <= 0 ? true : false;
+            board[i * GRID_Y + x] <= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         else if (type == b_ROOK) {
-            possible_moves[y * GRID_Y + i] = board[y * GRID_Y + i] >= 0 ? true : false;
+            board[i * GRID_Y + x] >= 0 ? set_bit(possible_moves, x, y): unset_bit(possible_moves, x, y);
         }
         if (board[y * GRID_Y + i] != 0) break;
     }
@@ -260,11 +287,11 @@ int move_king(int x, int y, e_piece type)
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             if (type == w_KING && board[i * GRID_Y + j] <= 0) {
                 num++;
-                possible_moves[i * GRID_Y + j] = true;
+                set_bit(possible_moves, j, i);
             }
             if (type == b_KING && board[i * GRID_Y + j] >= 0) {
                 num++;
-                possible_moves[i * GRID_Y + j] = true;
+                set_bit(possible_moves, j, i);
             }
         }
     }

@@ -2,16 +2,6 @@
 #define BOARD_H_
 
 #include "common.h"
-#include "piece.h"
-
-
-#define WIDTH  512
-#define HEIGHT 512
-#define GRID_X 8
-#define GRID_Y 8
-#define GRID_SIZE GRID_X * GRID_Y
-#define CELL_X (WIDTH / GRID_X)
-#define CELL_Y (HEIGHT / GRID_Y)
 /*
    10 = white king
     9 = white queen
@@ -28,8 +18,11 @@
    -1 = black pawn
 */
 extern e_piece board[GRID_X * GRID_Y];
-extern bool possible_moves[GRID_X * GRID_Y];
+extern uint64_t possible_moves;
+extern bool white_heatmap[BOARD_SIZE];
+extern bool black_heatmap[BOARD_SIZE];
 extern void reset_possible_moves(void);
+extern void reset_heatmap(bool type);
 extern int find_possible_moves(int x, int y, e_piece type);
 extern void init_board(char* str);
 #endif // !BOARD_H_
