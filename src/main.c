@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     else {
 #ifdef DEBUG
         // init_board("K5Nk/8/8/8/8/8/PPPPP3/k6K");
-        init_board("P5Nk/8/8/8/3kQ3/8/PPPPP3/k6K");
+        init_board("P2r2Nk/8/8/8/3kB3/8/3R4/kB5b");
 #else
         init_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 #endif /* ifdef DEBUG */

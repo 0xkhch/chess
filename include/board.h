@@ -18,9 +18,11 @@
    -1 = black pawn
 */
 extern e_piece board[GRID_X * GRID_Y];
+
 extern uint64_t possible_moves;
-extern bool white_heatmap[BOARD_SIZE];
-extern bool black_heatmap[BOARD_SIZE];
+extern uint64_t white_heatmap;
+extern uint64_t black_heatmap;
+
 extern void reset_possible_moves(void);
 extern void reset_heatmap(bool type);
 extern int find_possible_moves(int x, int y, e_piece type);

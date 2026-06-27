@@ -97,11 +97,9 @@ void draw_board(Texture2D* pieces)
             // draw circles
             if (possible_move) {
 #ifdef DEBUG
-                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, RED);
                 DrawText(TextFormat("x: %d y: %d", j, i), j * CELL_X, i * CELL_Y, 16, RED);
-#else
-                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, DARK_GREEN);
 #endif /* ifdef DEBUG */
+                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, DARK_GREEN);
             }
         }
     }
