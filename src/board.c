@@ -65,7 +65,7 @@ int move_pawn(int x, int y, e_piece type)
 {
     int num = 0;
     int pos = y * GRID_Y + x;
-    if (pos < 0 && pos >= BOARD_SIZE) return -1;
+    if (pos < 0 || pos >= BOARD_SIZE || pos - GRID_X < 0 || pos + GRID_X >= BOARD_SIZE) return 0;
     if (type == w_PAWN) {
         if (board[pos - GRID_X] == 0) {
             num++;
@@ -111,7 +111,7 @@ int move_knight(int x, int y, e_piece type)
 {
     int num = 0;
     int pos = y * GRID_Y + x;
-    if (pos < 0 && pos >= BOARD_SIZE) return -1;
+    if (pos < 0 || pos >= BOARD_SIZE || pos - GRID_X < 0 || pos + GRID_X >= BOARD_SIZE) return 0;
     // wide
     for (int i = y - 1; i <= y + 1; i = i + 2) {
         for (int j = x - 2; j <= x + 2; j = j + 4) {
