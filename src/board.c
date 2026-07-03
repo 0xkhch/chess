@@ -11,9 +11,6 @@ void move_knight(int x, int y, e_piece type, uint64_t* moves);
 void move_bishop(int x, int y, e_piece type, uint64_t* moves);
 void move_rook(int x,   int y, e_piece type, uint64_t* moves);
 void move_king(int x,   int y, e_piece type, uint64_t* moves);
-static inline bool is_white(e_piece p);
-static inline bool is_empty(e_piece p);
-static inline bool is_black(e_piece p);
 static inline bool is_enemy(e_piece a, e_piece b);
 
 void find_selected_moves(global_state_t* global)
@@ -94,7 +91,7 @@ void move_knight(int x, int y, e_piece type, uint64_t* moves)
     for (int i = y - 1; i <= y + 1; i = i + 2) {
         for (int j = x - 2; j <= x + 2; j = j + 4) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-            e_piece p = board[i * GRID_Y + j];
+            e_piece p = board_at(j, i);
             if (is_empty(p) || is_enemy(type, p)) {
                 set_bit(*moves, j, i);
             }
@@ -104,7 +101,7 @@ void move_knight(int x, int y, e_piece type, uint64_t* moves)
     for (int i = y - 2; i <= y + 2; i = i + 4) {
         for (int j = x - 1; j <= x + 1; j = j + 2) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-            e_piece p = board[i * GRID_Y + j];
+            e_piece p = board_at(j, i);
             if (is_empty(p) || is_enemy(type, p)) {
                 set_bit(*moves, j, i);
             }
@@ -117,7 +114,7 @@ void move_axis(int x, int y, int dir_x, int dir_y, e_piece type, uint64_t* moves
     int dx = x + dir_x;
     int dy = y + dir_y;
     while (dx >= 0 && dx < GRID_X && dy >= 0 && dy < GRID_Y) {
-        e_piece p = board[dy * GRID_Y + dx];
+        e_piece p = board_at(dx, dy);
         if (is_empty(p)) {
             set_bit(*moves, dx, dy);
         }
@@ -154,7 +151,7 @@ void move_king(int x, int y, e_piece type, uint64_t* moves)
     for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-            e_piece p = board[i * GRID_Y + j];
+            e_piece p = board_at(j, i);
             if (is_empty(p) || is_enemy(type, p)) {
                 set_bit(*moves, j, i);
             }
@@ -236,19 +233,24 @@ void print_board(uint64_t x) {
     }
 }
 
-static inline bool is_white(e_piece p)
+e_piece board_at(int x, int y)
+{
+    return board[y * GRID_Y + x];
+}
+
+bool is_white(e_piece p)
 { 
     return p > 0;
 }
-static inline bool is_empty(e_piece p)
+bool is_empty(e_piece p)
 { 
     return p == 0;
 }
-static inline bool is_black(e_piece p)
+bool is_black(e_piece p)
 { 
     return p < 0; 
 }
-static inline bool is_enemy(e_piece a, e_piece b)
+bool is_enemy(e_piece a, e_piece b)
 {
     return (is_white(a) && is_black(b)) || (is_black(a) && is_white(b));
 }
