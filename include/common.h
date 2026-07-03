@@ -38,6 +38,7 @@ typedef struct global_state {
     int mouse_pos_x;
     int mouse_pos_y;
     int mouse_pos;
+    uint64_t selected_moves;
     e_piece selected_type;
     e_state state;
     bool turn;

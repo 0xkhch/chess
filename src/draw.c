@@ -67,7 +67,7 @@ void draw_board(Texture2D* pieces)
         for (int j = 0; j < GRID_X; j++) {
             // draw board
             bool is_light = ((j + i) % 2 == 0);
-            bool possible_move = (bool)get_bit(possible_moves, j, i);
+            bool possible_move = (bool)get_bit(global.selected_moves, j, i);
             if(global.state == SELECT && possible_move && global.mouse_pos_x == j && global.mouse_pos_y == i) {
                 DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_GREEN: DARK_GREEN);
             }

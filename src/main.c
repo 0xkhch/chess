@@ -36,13 +36,11 @@ int main(int argc, char** argv)
     else {
 #ifdef DEBUG
         // init_board("K5Nk/8/8/8/8/8/PPPPP3/k6K");
-        init_board("P2r2Nk/8/8/8/3kB3/8/3R4/kB5b");
+        init_board("P2r2Nk/8/8/8/3kQ3/8/3R4/kB5b");
 #else
         init_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 #endif /* ifdef DEBUG */
     }
-    global.is_white_checked = true;
-    global.is_black_checked = true;
     InitWindow(WIDTH, HEIGHT, "Chess");
     InitAudioDevice();
 
@@ -72,14 +70,18 @@ int main(int argc, char** argv)
             ClearBackground(WHITE);
             switch (global.state) {
                 case NONE: {
+                    global.selected_moves = 0;
                 } break;
                 case SELECT: {
-                    int num = find_possible_moves(global.selected_x, global.selected_y, global.selected_type);
+                    find_selected_moves(&global);
                 }; break;
                 default: {
                 } break;
             }
+
+#ifdef DEBUG
             DrawFPS(0, 0);
+#endif
         EndDrawing();
     }
     UnloadTexture(pieces);
