@@ -150,7 +150,8 @@ void move_rook(int x, int y, e_piece type, uint64_t* moves)
 }
 
 void move_king(int x, int y, e_piece type, uint64_t* moves)
-{ for (int i = y - 1; i <= y + 1; i++) {
+{ 
+    for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board[i * GRID_Y + j];
