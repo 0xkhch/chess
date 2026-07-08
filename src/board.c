@@ -1,5 +1,4 @@
 #include "board.h"
-#include "ctype.h"
 #include "piece.h"
 #include "stdlib.h"
 
@@ -15,8 +14,11 @@ void print_board(uint64_t x);
 e_piece char_to_enum(char c);
 char enum_to_char(e_piece p);
 void set_turn(char c);
+bool in_single_check(e_piece p);
+bool is_slider(e_piece a);
 bool is_enemy(e_piece a, e_piece b);
-bool is_enemy_king(e_piece piece, bool turn);
+void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* moves);
+bool in_single_check_by_slider(e_piece p);
 
 void find_selected_moves() {
     global.selected_moves = 0;
@@ -62,34 +64,76 @@ void find_moves(int x, int y, e_piece type, uint64_t* moves)
 
 void move_pawn(int x, int y, e_piece type, uint64_t* moves)
 {
-    int pos = y * GRID_Y + x;
+    // >TODO: refactor
     if (type == w_PAWN) {
-        if (is_empty(board[pos - GRID_X])) {
+        if (is_empty(board_at(x, y - 1))) {
             set_bit(*moves, x, (y - 1));
-            if (is_empty(board[pos - (GRID_X*2)]) && y == 6) {
+            if (in_single_check_by_slider(type)) {
+                bool b = (bool)get_bit(global.checking_moves, x, (y - 1));
+                if (!b) {
+                    unset_bit(*moves, x, y - 1);
+                }
+            }
+            if (is_empty(board_at(x, y - 2)) && y == 6) {
                 set_bit(*moves, x, (y - 2));
+                if (in_single_check_by_slider(type)) {
+                    bool b = (bool)get_bit(global.checking_moves, x, (y - 2));
+                    if (!b) {
+                        unset_bit(*moves, x, y - 2);
+                    }
+                }
             }
         }
-        if (is_black(board[pos - GRID_X + 1]) && x != GRID_X - 1) {
+        if (is_black(board_at(x + 1, y - 1)) && x != GRID_X - 1) {
             set_bit(*moves, (x + 1), (y - 1));
+            if (in_single_check(type)) {
+                if ((x + 1) != global.checking_x || (y - 1) != global.checking_y) {
+                    unset_bit(*moves, (x + 1), (y - 1));
+                }
+            }
         }
-        if (is_black(board[pos - GRID_X - 1]) && x != 0) {
+        if (is_black(board_at(x - 1, y - 1)) && x != 0) {
             set_bit(*moves, (x - 1), (y - 1));
+            if (in_single_check(type)) {
+                if ((x - 1) != global.checking_x || (y - 1) != global.checking_y) {
+                    unset_bit(*moves, (x - 1), (y - 1));
+                }
+            }
         }
     }
     else if (type == b_PAWN) {
-        if (pos >= GRID_X && pos < GRID_SIZE - GRID_X) {
-            if (is_empty(board[pos + GRID_X])) {
-                set_bit(*moves, x, (y + 1));
-                if (is_empty(board[pos + (GRID_X*2)]) && y == 1) {
-                    set_bit(*moves, x, (y + 2));
+        if (is_empty(board_at(x, y + 1))) {
+            set_bit(*moves, x, (y + 1));
+            if (in_single_check_by_slider(type)) {
+                bool b = (bool)get_bit(global.checking_moves, x, (y + 1));
+                if (!b) {
+                    unset_bit(*moves, x, (y + 1));
                 }
             }
-            if (is_white(board[pos + GRID_X + 1]) && x != GRID_X - 1) {
-                set_bit(*moves, (x + 1), (y + 1));
+            if (is_empty(board_at(x, y + 2)) && y == 1) {
+                set_bit(*moves, x, (y + 2));
+                if (in_single_check_by_slider(type)) {
+                    bool b = (bool)get_bit(global.checking_moves, x, (y + 2));
+                    if (!b) {
+                        unset_bit(*moves, x, (y + 2));
+                    }
+                }
             }
-            if (is_white(board[pos + GRID_X - 1]) && x != 0) {
-                set_bit(*moves, (x - 1), (y + 1));
+        }
+        if (is_white(board_at(x + 1, y + 1)) && x != GRID_X - 1) {
+            set_bit(*moves, (x + 1), (y + 1));
+            if (in_single_check(type)) {
+                if ((x + 1) != global.checking_x || (y + 1) != global.checking_y) {
+                    unset_bit(*moves, (x + 1), (y + 1));
+                }
+            }
+        }
+        if (is_white(board_at(x - 1, y + 1)) && x != 0) {
+            set_bit(*moves, (x - 1), (y + 1));
+            if (in_single_check(type)) {
+                if ((x - 1) != global.checking_x || (y + 1) != global.checking_y) {
+                    unset_bit(*moves, (x - 1), (y + 1));
+                }
             }
         }
     }
@@ -97,12 +141,27 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
 
 void move_knight(int x, int y, e_piece type, uint64_t* moves)
 {
+    //TODO:refactor
     // wide
     for (int i = y - 1; i <= y + 1; i = i + 2) {
         for (int j = x - 2; j <= x + 2; j = j + 4) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
-            if (is_empty(p) || is_enemy(type, p)) {
+            if (is_empty(p)) {
+                if (in_single_check(type)) {
+                    bool possible = (bool)get_bit(global.checking_moves, j, i);
+                    if (!is_slider(board_at(global.checking_x, global.checking_y)) || !possible) {
+                        continue;
+                    }
+                }
+                set_bit(*moves, j, i);
+            }
+            if (is_enemy(type, p)) {
+                if (in_single_check(type)) {
+                    if (j != global.checking_x || i != global.checking_y) {
+                        continue;
+                    }
+                }
                 set_bit(*moves, j, i);
             }
         }
@@ -112,12 +171,27 @@ void move_knight(int x, int y, e_piece type, uint64_t* moves)
         for (int j = x - 1; j <= x + 1; j = j + 2) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
-            if (is_empty(p) || is_enemy(type, p)) {
+            if (is_empty(p)) {
+                if (in_single_check(type)) {
+                    bool possible = (bool)get_bit(global.checking_moves, j, i);
+                    if (!is_slider(board_at(global.checking_x, global.checking_y)) || !possible) {
+                        continue;
+                    }
+                }
+                set_bit(*moves, j, i);
+            }
+            if (is_enemy(type, p)) {
+                if (in_single_check(type)) {
+                    if (j != global.checking_x || i != global.checking_y) {
+                        continue;
+                    }
+                }
                 set_bit(*moves, j, i);
             }
         }
     }
 }
+
 
 void move_axis(int x, int y, int dir_x, int dir_y, e_piece type, uint64_t* moves)
 {
@@ -126,10 +200,23 @@ void move_axis(int x, int y, int dir_x, int dir_y, e_piece type, uint64_t* moves
     while (dx >= 0 && dx < GRID_X && dy >= 0 && dy < GRID_Y) {
         e_piece p = board_at(dx, dy);
         if (is_empty(p)) {
+            if (in_single_check(type)) {
+                bool possible = (bool)get_bit(global.checking_moves, dx, dy);
+                if (!is_slider(board_at(global.checking_x, global.checking_y)) || !possible) {
+                    dx = dx + dir_x;
+                    dy = dy + dir_y;
+                    continue;
+                }
+            }
             set_bit(*moves, dx, dy);
         }
         else {
             if (is_enemy(type, p)) {
+                if (in_single_check(type)) {
+                    if (dx != global.checking_x || dy != global.checking_y) {
+                        break; // if we can capture the piece but its not the one checking us then ignore it
+                    }
+                }
                 set_bit(*moves, dx, dy);
             }
             break;
@@ -156,47 +243,94 @@ void move_rook(int x, int y, e_piece type, uint64_t* moves)
     move_axis(x, y,  0, -1, type, moves); // up
 }
 
+void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* moves)
+{
+    uint64_t amount_checked = global.amount_checked;
+    global.amount_checked = 0;
+    int dir_x = tx - fx > 0 ? 1 : -1; 
+    if (fx == tx) {
+        dir_x = 0;
+    }
+    int dir_y = ty - fy > 0 ? 1 : -1; 
+    if (ty == fy) {
+        dir_y = 0;
+    }
+    move_axis(fx, fy, dir_x, dir_y, type, moves);
+    global.amount_checked = amount_checked;
+}
+
+void find_piece_position(int* x, int* y, e_piece type)
+{
+    for (int i = 0; i <= GRID_Y; i++) {
+        for (int j = 0; j <= GRID_X; j++) {
+            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+            e_piece p = board_at(j, i);
+            if (p == type) {
+                *x = j;
+                *y = i;
+                break;
+            }
+        }
+    }
+
+}
 void build_heatmap(e_piece type, uint64_t* moves)
 {
+    uint64_t local = 0;
+    uint64_t amount_checking = 0;
     for (int i = 0; i < GRID_Y; i++) {
         for (int j = 0; j < GRID_X; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
             if (is_enemy(type, p)) {
-                find_moves(j, i, p, moves);
+                find_moves(j, i, p, &local);
+                bool heat = (bool)get_bit(local, global.king_x, global.king_y);
+                if (heat) {
+                    global.checking_x = j;
+                    global.checking_y = i;
+                    amount_checking++;
+                }
+                *moves = *moves | local;
+                local = 0;
             }
         }
     }
+    global.amount_checked = amount_checking;
 }
 
 void check()
 {
+    int x = 0, y = 0;
+    find_piece_position(&x, &y, global.turn == t_WHITE ? w_KING : b_KING);
+    global.king_x = x;
+    global.king_y = y;
+
     uint64_t moves = 0;
     build_heatmap(global.turn == t_WHITE ? w_KING : b_KING, &moves);
     global.heatmap = moves;
 
-    //TODO: possible cache the king positions so we dont have to search for it again...
-    int x = 0;
-    int y = 0;
-    for (int i = 0; i <= GRID_Y; i++) {
-        for (int j = 0; j <= GRID_X; j++) {
-            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-            e_piece p = board_at(j, i);
-            if (p == w_KING && global.turn == t_WHITE) {
-                x = j;
-                y = i;
-            }
-            if (p == b_KING && global.turn == t_BLACK) {
-                x = j;
-                y = i;
-            }
+    bool heat = (bool)get_bit(moves, x, y);
+    global.checked = (heat && global.turn == t_WHITE) ? c_WHITE : c_BLACK;
+    global.amount_checked = heat ? global.amount_checked : 0;
+    if (global.amount_checked > 1 && global.state == s_SELECT) { // only way is to move king
+        if (global.selected_type != (global.turn == t_WHITE ? w_KING : b_KING)) {
+            global.state = s_NONE;
+            global.selected_type = e_EMPTY;
+            global.selected_x = 0;
+            global.selected_y = 0;
+            global.selected_moves = 0;
+            return;
         }
     }
-    bool heat = (bool)get_bit(moves, x, y);
-    global.check = heat ? true : false;
-    global.checked = (heat && global.turn == t_WHITE) ? c_WHITE : c_BLACK;
+
+    if (global.amount_checked == 1) {
+        e_piece checked_by = board_at(global.checking_x, global.checking_y);
+        sq2sq_moves_slider(checked_by, global.checking_x, global.checking_y, global.king_x, global.king_y, &global.checking_moves);
+    }
+    //find our heatmap, if it is 0 then we and amount_checking is 0 then draw, otherwise we lost
 }
-uint64_t slider_heatmap(int x, int y, e_piece type)
+
+uint64_t heatmap_without_king(int x, int y, e_piece type)
 {
     uint64_t moves = 0;
     //remove king
@@ -209,7 +343,7 @@ uint64_t slider_heatmap(int x, int y, e_piece type)
 
 void move_king(int x, int y, e_piece type, uint64_t* moves)
 { 
-    uint64_t heatmap = slider_heatmap(x, y, type);
+    uint64_t heatmap = heatmap_without_king(x, y, type);
     for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
@@ -222,6 +356,10 @@ void move_king(int x, int y, e_piece type, uint64_t* moves)
     }
 }
 
+bool is_digit(char c)
+{
+    return c>= '0' && c<= '9';
+}
 void load_board(char* str)
 {
     // fen notation
@@ -229,7 +367,7 @@ void load_board(char* str)
     size_t i = 0;
     while ((c = *(str)++)) {
         if (i == GRID_SIZE) break;
-        if (isdigit(c)) {
+        if (is_digit(c)) {
             size_t skip = c - '0';
             while (skip-- > 0) {
                 board[i] = e_EMPTY;
@@ -356,11 +494,21 @@ bool is_black(e_piece p)
 { 
     return p < 0; 
 }
+bool in_single_check(e_piece p)
+{ 
+    return global.amount_checked == 1 && ((is_white(p) && global.checked == c_WHITE) || (is_black(p) && global.checked == c_BLACK)); 
+}
 bool is_enemy(e_piece a, e_piece b)
 {
     return (is_white(a) && is_black(b)) || (is_black(a) && is_white(b));
 }
 
-bool is_enemy_king(e_piece piece, bool turn) {
-    return (turn == t_WHITE && piece == b_KING) || (turn == t_BLACK && piece == w_KING);
+bool is_slider(e_piece a)
+{
+    return (a >= 4 && a <= 9) || (a <= -4 && a >= -9);
+}
+
+bool in_single_check_by_slider(e_piece p)
+{
+    return in_single_check(p) && is_slider(board_at(global.checking_x, global.checking_y));
 }

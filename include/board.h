@@ -21,7 +21,6 @@
 extern e_piece board[GRID_X * GRID_Y];
 extern void reset_heatmap(bool type);
 extern void find_selected_moves();
-extern void find_moves(int x, int y, e_piece type, uint64_t* moves);
 extern void check();
 
 extern void load_board(char* str);

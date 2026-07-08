@@ -114,5 +114,5 @@ void draw_board(Texture2D* pieces)
 
 bool is_checked(e_piece type)
 {
-    return ((type == b_KING && global.checked == c_BLACK) || (type == w_KING && global.checked == c_WHITE)) && global.check;
+    return ((type == b_KING && global.checked == c_BLACK) || (type == w_KING && global.checked == c_WHITE)) && global.amount_checked > 0;
 }

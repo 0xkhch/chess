@@ -35,7 +35,6 @@ void control(Sound* move_sound, Sound* capture_sound, int x, int y) {
                 clear_selection();
                 break;
             }
-
             execute_move(move_sound, capture_sound, x, y);
         } break;
     }

@@ -24,26 +24,34 @@
 #define t_BLACK true
 
 // bit board stuff
-#define get_bit(i, x, y) ((i >> (63 - (y * 8 + x))) & 1UL)
+#define get_bit(i, x, y) ((i >> (63 - ((y) * (GRID_Y) + (x)))) & 1UL)
 
-#define set_bit(i, x, y) (i |= (1UL << (63 - (y * 8 + x))))
+#define set_bit(i, x, y) (i |= (1UL << (63 - ((y) * (GRID_Y) + (x)))))
 #define set_bit_offset(i, offset) (i |= (1UL << (offset)))
 
-#define unset_bit(i, x, y) (i &= ~(1UL << (63 - (y * 8 + x))))
+#define unset_bit(i, x, y) (i &= ~(1UL << (63 - ((y) * (GRID_Y) + (x)))))
 #define unset_bit_offset(i, offset) (i &= ~(1UL << (offset)))
 
 typedef struct global_state {
     int selected_x;
     int selected_y;
+
     int mouse_pos_x;
     int mouse_pos_y;
-    int mouse_pos;
+    
+    int king_x; // current turn kings pos
+    int king_y;
+
+    int checking_x;
+    int checking_y;
+    uint64_t amount_checked;
+    uint64_t checking_moves;
+
     uint64_t selected_moves;
     uint64_t heatmap;
     e_piece selected_type;
     e_state state;
     e_check checked;
     bool turn;
-    bool check;
 } global_state_t;
 #endif // !COMMON_H_
