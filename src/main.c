@@ -9,12 +9,46 @@
 #include "capture.h"
 global_state_t global = {};
 
-//TODO: bitboards
-//TODO: Threatmaps and checks
 //TODO: en passants
 //TODO: castling 
 //TODO: promotion
 //TODO: start and end screen
+
+bool save_board()
+{
+    FILE* f = fopen("saved.txt", "w+");
+    if (f == NULL) {
+        fprintf(stderr, "Failed to open file\n");
+        return false;
+    }
+
+    size_t i = 0;
+    while (i < GRID_SIZE) {
+        if (i % GRID_X == 0 && i != 0) {
+            putc('/', f);
+        }
+        if (board[i] == e_EMPTY) {
+            size_t cnt = 0;
+            char digits[] = {'1', '2', '3', '4', '5', '6', '7', '8'};
+            while (board[++i] == e_EMPTY) {
+                if (i % 8 == 0) {
+                    break;
+                }
+                cnt++;
+            }
+            fputc(digits[cnt], f);
+            continue;
+        }
+        fputc(enum_to_char(board[i]), f);
+        i++;
+    }
+    fputc(' ', f);
+    fputc(global.turn ? 'b' : 'w', f);
+    printf("INFO: saved board.\n");
+    fclose(f);
+    return true;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -23,23 +57,11 @@ int main(int argc, char** argv)
         return 1;
     }
     else if (argc == 3) {
-        init_board(argv[argc - 2]);
-        switch (*argv[argc - 1]) {
-            case 'b':
-                global.turn = true;
-            break;
-            case 'w':
-                global.turn = false;
-            break;
-        }
+        load_board(argv[argc - 2]);
+        set_turn(*argv[argc - 1]);
     }
     else {
-#ifdef DEBUG
-        // init_board("K5Nk/8/8/8/8/8/PPPPP3/k6K");
-        init_board("P2r2Nk/8/8/8/3kQ3/8/3R4/kB5b");
-#else
-        init_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-#endif /* ifdef DEBUG */
+        load_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
     }
     InitWindow(WIDTH, HEIGHT, "Chess");
     InitAudioDevice();
@@ -65,15 +87,39 @@ int main(int argc, char** argv)
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             control(&move_sound, &capture_sound, x, y);
         }
+
+#ifdef DEBUG
+        if (IsKeyPressed(KEY_S)) {
+            save_board();
+        }
+        if (IsKeyPressed(KEY_L)) {
+            FILE* f = fopen("saved.txt", "r");
+            if (f == NULL) {
+                fprintf(stderr, "Failed to open file\n");
+                return false;
+            }
+            char buffer[64] = {};
+            fread(buffer, sizeof(char), 64, f);
+            load_board(buffer);
+
+            global.selected_moves = 0;
+            global.state = s_NONE;
+
+            printf("INFO: loaded board.\n");
+            fclose(f);
+        }
+#endif /* ifdef DEBUG */
+
+        check();
         BeginDrawing();
             draw_board(&pieces);
             ClearBackground(WHITE);
             switch (global.state) {
-                case NONE: {
+                case s_NONE: {
                     global.selected_moves = 0;
                 } break;
-                case SELECT: {
-                    find_selected_moves(&global);
+                case s_SELECT: {
+                    find_selected_moves();
                 }; break;
                 default: {
                 } break;

@@ -2,9 +2,14 @@
 #define PIECE_H_
 
 typedef enum {
-    NONE,
-    SELECT,
+    s_NONE,
+    s_SELECT,
 } e_state;
+
+typedef enum {
+    c_WHITE,
+    c_BLACK
+} e_check;
 
 
 typedef enum {

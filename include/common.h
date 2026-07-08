@@ -39,10 +39,11 @@ typedef struct global_state {
     int mouse_pos_y;
     int mouse_pos;
     uint64_t selected_moves;
+    uint64_t heatmap;
     e_piece selected_type;
     e_state state;
+    e_check checked;
     bool turn;
-    bool is_black_checked;
-    bool is_white_checked;
+    bool check;
 } global_state_t;
 #endif // !COMMON_H_

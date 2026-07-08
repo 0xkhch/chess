@@ -20,13 +20,21 @@
 #define BOARD_AT(board, x,y) board[(y) * GRID_X + (x)]
 extern e_piece board[GRID_X * GRID_Y];
 extern void reset_heatmap(bool type);
-extern void find_selected_moves(global_state_t* global);
-extern void init_board(char* str);
+extern void find_selected_moves();
+extern void find_moves(int x, int y, e_piece type, uint64_t* moves);
+extern void check();
+
+extern void load_board(char* str);
+extern e_piece char_to_enum(char c);
+extern char enum_to_char(e_piece p);
+extern void set_turn(char c);
 
 extern e_piece board_at(int x, int y);
 extern bool is_white(e_piece p);
 extern bool is_empty(e_piece p);
 extern bool is_black(e_piece p);
+
+extern global_state_t global;
 
 #endif // !BOARD_H_
 
