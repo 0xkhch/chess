@@ -113,57 +113,42 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
     }
 }
 
+int abs(int a)
+{
+    return (a >= 0) ? a : -a;
+}
+
+void move_square(int x, int y, int dx, int dy, e_piece type, uint64_t* moves)
+{
+    for (int i = y + dy; i <= y + abs(dy); i = i + (abs(dy) * 2)) {
+        for (int j = x + dx; j <= x + abs(dx); j = j + (abs(dx) * 2)) {
+            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+            e_piece p = board_at(j, i);
+            if (is_empty(p)) {
+                if (in_single_check(type)) {
+                    bool possible = (bool)get_bit(global.checking_moves, j, i);
+                    if (!is_slider(board_at(global.checking_x, global.checking_y)) || !possible) {
+                        continue;
+                    }
+                }
+                set_bit(*moves, j, i);
+            }
+            if (is_enemy(type, p)) {
+                if (in_single_check(type)) {
+                    if (j != global.checking_x || i != global.checking_y) {
+                        continue;
+                    }
+                }
+                set_bit(*moves, j, i);
+            }
+        }
+    }
+}
 void move_knight(int x, int y, e_piece type, uint64_t* moves)
 {
     //TODO:refactor
-    // wide
-    for (int i = y - 1; i <= y + 1; i = i + 2) {
-        for (int j = x - 2; j <= x + 2; j = j + 4) {
-            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-            e_piece p = board_at(j, i);
-            if (is_empty(p)) {
-                if (in_single_check(type)) {
-                    bool possible = (bool)get_bit(global.checking_moves, j, i);
-                    if (!is_slider(board_at(global.checking_x, global.checking_y)) || !possible) {
-                        continue;
-                    }
-                }
-                set_bit(*moves, j, i);
-            }
-            if (is_enemy(type, p)) {
-                if (in_single_check(type)) {
-                    if (j != global.checking_x || i != global.checking_y) {
-                        continue;
-                    }
-                }
-                set_bit(*moves, j, i);
-            }
-        }
-    }
-    // long 
-    for (int i = y - 2; i <= y + 2; i = i + 4) {
-        for (int j = x - 1; j <= x + 1; j = j + 2) {
-            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
-            e_piece p = board_at(j, i);
-            if (is_empty(p)) {
-                if (in_single_check(type)) {
-                    bool possible = (bool)get_bit(global.checking_moves, j, i);
-                    if (!is_slider(board_at(global.checking_x, global.checking_y)) || !possible) {
-                        continue;
-                    }
-                }
-                set_bit(*moves, j, i);
-            }
-            if (is_enemy(type, p)) {
-                if (in_single_check(type)) {
-                    if (j != global.checking_x || i != global.checking_y) {
-                        continue;
-                    }
-                }
-                set_bit(*moves, j, i);
-            }
-        }
-    }
+    move_square(x, y, -1, -2, type, moves); // wide
+    move_square(x, y, -2, -1, type, moves); // long
 }
 
 
