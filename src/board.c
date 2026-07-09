@@ -60,81 +60,55 @@ void find_moves(int x, int y, e_piece type, uint64_t* moves)
         break;
     }
 }
+void move_if_valid(int x, int y, e_piece type, uint64_t* moves)
+{
+    set_bit(*moves, x, y);
+    if (in_single_check_by_slider(type)) {
+        if (!get_bit(global.checking_moves, x, y)) {
+            unset_bit(*moves, x, y);
+        }
+    }
+}
 
+void capture_if_valid(int x, int y, e_piece type, uint64_t* moves)
+{
+    set_bit(*moves, x, y);
+    if (in_single_check(type)) {
+        if (x != global.checking_x || y != global.checking_y) {
+            unset_bit(*moves, x, y);
+        }
+    }
+}
 
 void move_pawn(int x, int y, e_piece type, uint64_t* moves)
 {
     // >TODO: refactor
     if (type == w_PAWN) {
         if (is_empty(board_at(x, y - 1))) {
-            set_bit(*moves, x, (y - 1));
-            if (in_single_check_by_slider(type)) {
-                bool b = (bool)get_bit(global.checking_moves, x, (y - 1));
-                if (!b) {
-                    unset_bit(*moves, x, y - 1);
-                }
-            }
+            move_if_valid(x, y - 1, type, moves);
             if (is_empty(board_at(x, y - 2)) && y == 6) {
-                set_bit(*moves, x, (y - 2));
-                if (in_single_check_by_slider(type)) {
-                    bool b = (bool)get_bit(global.checking_moves, x, (y - 2));
-                    if (!b) {
-                        unset_bit(*moves, x, y - 2);
-                    }
-                }
+                move_if_valid(x, y - 2, type, moves);
             }
         }
         if (is_black(board_at(x + 1, y - 1)) && x != GRID_X - 1) {
-            set_bit(*moves, (x + 1), (y - 1));
-            if (in_single_check(type)) {
-                if ((x + 1) != global.checking_x || (y - 1) != global.checking_y) {
-                    unset_bit(*moves, (x + 1), (y - 1));
-                }
-            }
+            capture_if_valid(x + 1, y - 1, type, moves);
         }
         if (is_black(board_at(x - 1, y - 1)) && x != 0) {
-            set_bit(*moves, (x - 1), (y - 1));
-            if (in_single_check(type)) {
-                if ((x - 1) != global.checking_x || (y - 1) != global.checking_y) {
-                    unset_bit(*moves, (x - 1), (y - 1));
-                }
-            }
+            capture_if_valid(x - 1, y - 1, type, moves);
         }
     }
     else if (type == b_PAWN) {
         if (is_empty(board_at(x, y + 1))) {
-            set_bit(*moves, x, (y + 1));
-            if (in_single_check_by_slider(type)) {
-                bool b = (bool)get_bit(global.checking_moves, x, (y + 1));
-                if (!b) {
-                    unset_bit(*moves, x, (y + 1));
-                }
-            }
+            move_if_valid(x, y + 1, type, moves);
             if (is_empty(board_at(x, y + 2)) && y == 1) {
-                set_bit(*moves, x, (y + 2));
-                if (in_single_check_by_slider(type)) {
-                    bool b = (bool)get_bit(global.checking_moves, x, (y + 2));
-                    if (!b) {
-                        unset_bit(*moves, x, (y + 2));
-                    }
-                }
+                move_if_valid(x, y + 2, type, moves);
             }
         }
         if (is_white(board_at(x + 1, y + 1)) && x != GRID_X - 1) {
-            set_bit(*moves, (x + 1), (y + 1));
-            if (in_single_check(type)) {
-                if ((x + 1) != global.checking_x || (y + 1) != global.checking_y) {
-                    unset_bit(*moves, (x + 1), (y + 1));
-                }
-            }
+            capture_if_valid(x + 1, y + 1, type, moves);
         }
         if (is_white(board_at(x - 1, y + 1)) && x != 0) {
-            set_bit(*moves, (x - 1), (y + 1));
-            if (in_single_check(type)) {
-                if ((x - 1) != global.checking_x || (y + 1) != global.checking_y) {
-                    unset_bit(*moves, (x - 1), (y + 1));
-                }
-            }
+            capture_if_valid(x - 1, y + 1, type, moves);
         }
     }
 }
