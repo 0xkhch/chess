@@ -19,10 +19,10 @@ bool is_slider(e_piece a);
 bool is_enemy(e_piece a, e_piece b);
 void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* moves);
 bool in_single_check_by_slider(e_piece p);
+bool can_castle_right(int x, int y, e_piece type);
+bool can_castle_left(int x, int y, e_piece type);
 
 void find_selected_moves() {
-    global.selected_moves = 0;
-    global.heatmap = 0;
     find_moves(global.selected_x, global.selected_y, global.selected_type, &global.selected_moves);
 }
 
@@ -283,7 +283,9 @@ void check()
     global.king_y = y;
 
     uint64_t moves = 0;
+    board[y * GRID_Y + x] = e_EMPTY;
     build_heatmap(global.turn == t_WHITE ? w_KING : b_KING, &moves);
+    board[y * GRID_Y + x] = global.turn == t_WHITE ? w_KING : b_KING;
     global.heatmap = moves;
 
     bool heat = (bool)get_bit(moves, x, y);
@@ -307,20 +309,9 @@ void check()
     //find our heatmap, if it is 0 then we and amount_checking is 0 then draw, otherwise we lost
 }
 
-uint64_t heatmap_without_king(int x, int y, e_piece type)
-{
-    uint64_t moves = 0;
-    //remove king
-    board[y * GRID_Y + x] = e_EMPTY;
-    build_heatmap(type, &moves);
-    //restore king
-    board[y * GRID_Y + x] = type;
-    return moves;
-}
-
 void move_king(int x, int y, e_piece type, uint64_t* moves)
 { 
-    uint64_t heatmap = heatmap_without_king(x, y, type);
+    uint64_t heatmap = global.heatmap;
     for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
@@ -331,6 +322,38 @@ void move_king(int x, int y, e_piece type, uint64_t* moves)
             }
         }
     }
+    if (global.amount_checked == 0 && ((type == w_KING && y == 7) || (type == b_KING && y == 0))) {
+        // king side castle
+        if (can_castle_right(x, y, type)) {
+            set_bit(*moves, (x + 2), y);
+            global.castling = true;
+        }
+        if (can_castle_left(x, y, type)) {
+            set_bit(*moves, (x - 2), y);
+            global.castling = true;
+        }
+    }
+    else {
+        global.castling = false;
+    }
+}
+bool can_castle_right(int x, int y, e_piece type)
+{
+    return board_at(x + 1, y) == e_EMPTY && 
+           board_at(x + 2, y) == e_EMPTY &&
+            (bool)get_bit(global.heatmap, (x + 1), y) == 0 &&
+            (bool)get_bit(global.heatmap, (x + 2), y) == 0 &&
+           ((type == w_KING && board_at(x + 3, y) == w_ROOK) || (type == b_KING && board_at(x + 3, y) == b_ROOK));
+}
+
+bool can_castle_left(int x, int y, e_piece type)
+{
+    return board_at(x - 1, y) == e_EMPTY && 
+           board_at(x - 2, y) == e_EMPTY && 
+           board_at(x - 3, y) == e_EMPTY &&
+            (bool)get_bit(global.heatmap, (x - 1), y) == 0 &&
+            (bool)get_bit(global.heatmap, (x - 2), y) == 0 &&
+           ((type == w_KING && board_at(x - 4, y) == w_ROOK) || (type == b_KING && board_at(x - 4, y) == b_ROOK));
 }
 
 bool is_digit(char c)
@@ -356,9 +379,7 @@ void load_board(char* str)
         board[i] = char_to_enum(c);
         i++;
     }
-#ifdef DEBUG
     set_turn(*str);
-#endif /* ifdef DEBUG */
     assert(i == GRID_SIZE && "Wrong amount of pieces..");
 }
 

@@ -11,7 +11,6 @@ global_state_t global = {};
 
 // en passant checks
 // pin checks
-//TODO: castling 
 //TODO: promotion
 //TODO: start and end screen
 
@@ -85,19 +84,15 @@ int main(int argc, char** argv)
         global.mouse_pos_x = x;
         global.mouse_pos_y = y;
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            control(&move_sound, &capture_sound, x, y);
-        }
 
-#ifdef DEBUG
         if (IsKeyPressed(KEY_S)) {
             save_board();
         }
         if (IsKeyPressed(KEY_L)) {
             FILE* f = fopen("saved.txt", "r");
             if (f == NULL) {
-                fprintf(stderr, "Failed to open file\n");
-                return false;
+                fprintf(stderr, "INFO: Failed to open file\n");
+                goto end;
             }
             char buffer[64] = {};
             fread(buffer, sizeof(char), 64, f);
@@ -110,28 +105,20 @@ int main(int argc, char** argv)
             printf("INFO: loaded board.\n");
             fclose(f);
         }
-#endif /* ifdef DEBUG */
 
-        check();
         BeginDrawing();
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                control(&move_sound, &capture_sound, x, y);
+            }
             draw_board(&pieces);
             ClearBackground(WHITE);
-            switch (global.state) {
-                case s_NONE: {
-                    global.selected_moves = 0;
-                } break;
-                case s_SELECT: {
-                    find_selected_moves();
-                }; break;
-                default: {
-                } break;
-            }
 
 #ifdef DEBUG
             DrawFPS(0, 0);
 #endif
         EndDrawing();
     }
+end:
     UnloadTexture(pieces);
     CloseWindow();
     return 0;

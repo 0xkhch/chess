@@ -69,5 +69,6 @@ typedef struct global_state {
     e_check checked;
     bool turn;
     bool en_passant;
+    bool castling;
 } global_state_t;
 #endif // !COMMON_H_
