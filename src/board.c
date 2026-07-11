@@ -309,6 +309,10 @@ void check()
         e_piece checked_by = board_at(global.checking_x, global.checking_y);
         sq2sq_moves_slider(checked_by, global.checking_x, global.checking_y, global.king_x, global.king_y, &global.checking_moves);
     }
+
+    if (global.amount_checked > 0) {
+        global.castling = false;
+    }
     //find our heatmap, if it is 0 then we and amount_checking is 0 then draw, otherwise we lost
 }
 
@@ -335,9 +339,6 @@ void move_king(int x, int y, e_piece type, uint64_t* moves)
             set_bit(*moves, (x - 2), y);
             global.castling = true;
         }
-    }
-    else {
-        global.castling = false;
     }
 }
 bool can_castle_right(int x, int y, e_piece type)
