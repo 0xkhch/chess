@@ -32,6 +32,18 @@
 #define unset_bit(i, x, y) (i &= ~(1UL << (63 - ((y) * (GRID_Y) + (x)))))
 #define unset_bit_offset(i, offset) (i &= ~(1UL << (offset)))
 
+typedef struct last_move {
+    // from
+    int fx;
+    int fy;
+    
+    // to
+    int tx;
+    int ty;
+
+    e_piece type;
+} last_move;
+
 typedef struct global_state {
     int selected_x;
     int selected_y;
@@ -49,9 +61,13 @@ typedef struct global_state {
 
     uint64_t selected_moves;
     uint64_t heatmap;
+
+    last_move prev;
+
     e_piece selected_type;
     e_state state;
     e_check checked;
     bool turn;
+    bool en_passant;
 } global_state_t;
 #endif // !COMMON_H_

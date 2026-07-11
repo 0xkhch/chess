@@ -9,7 +9,8 @@
 #include "capture.h"
 global_state_t global = {};
 
-//TODO: en passants
+// en passant checks
+// pin checks
 //TODO: castling 
 //TODO: promotion
 //TODO: start and end screen
@@ -104,6 +105,7 @@ int main(int argc, char** argv)
 
             global.selected_moves = 0;
             global.state = s_NONE;
+            global.prev.type = e_EMPTY;
 
             printf("INFO: loaded board.\n");
             fclose(f);

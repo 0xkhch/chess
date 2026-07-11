@@ -80,9 +80,25 @@ void capture_if_valid(int x, int y, e_piece type, uint64_t* moves)
     }
 }
 
+int abs(int a) {
+    return a < 0 ? -a : a;
+}
+
+bool en_passantable(int x, int y, e_piece type)
+{
+    if (is_enemy(type, global.prev.type)) {
+        if (y == 3 && abs((global.prev.ty - global.prev.fy)) == 2) {
+            return true;
+        }
+        if (y == 4 && abs((global.prev.ty - global.prev.fy)) == 2) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void move_pawn(int x, int y, e_piece type, uint64_t* moves)
 {
-    // >TODO: refactor
     if (type == w_PAWN) {
         if (is_empty(board_at(x, y - 1))) {
             move_if_valid(x, y - 1, type, moves);
@@ -90,11 +106,15 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
                 move_if_valid(x, y - 2, type, moves);
             }
         }
-        if (is_black(board_at(x + 1, y - 1)) && x != GRID_X - 1) {
+        if (x != GRID_X - 1 && is_black(board_at(x + 1, y - 1))) {
             capture_if_valid(x + 1, y - 1, type, moves);
         }
-        if (is_black(board_at(x - 1, y - 1)) && x != 0) {
+        if (x != 0 && is_black(board_at(x - 1, y - 1))) {
             capture_if_valid(x - 1, y - 1, type, moves);
+        }
+        if (en_passantable(x, y, type)) {
+            global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y - 1, type, moves) : capture_if_valid(x + 1, y - 1, type, moves);
+            global.en_passant = true;
         }
     }
     else if (type == b_PAWN) {
@@ -104,24 +124,23 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
                 move_if_valid(x, y + 2, type, moves);
             }
         }
-        if (is_white(board_at(x + 1, y + 1)) && x != GRID_X - 1) {
+        if (x != GRID_X - 1 && is_white(board_at(x + 1, y + 1))) {
             capture_if_valid(x + 1, y + 1, type, moves);
         }
-        if (is_white(board_at(x - 1, y + 1)) && x != 0) {
+        if (x != 0 && is_white(board_at(x - 1, y + 1))) {
             capture_if_valid(x - 1, y + 1, type, moves);
+        }
+        if (en_passantable(x, y, type)) {
+            global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y + 1, type, moves) : capture_if_valid(x + 1, y + 1, type, moves);
+            global.en_passant = true;
         }
     }
 }
 
-int abs(int a)
-{
-    return (a >= 0) ? a : -a;
-}
-
 void move_square(int x, int y, int dx, int dy, e_piece type, uint64_t* moves)
 {
-    for (int i = y + dy; i <= y + abs(dy); i = i + (abs(dy) * 2)) {
-        for (int j = x + dx; j <= x + abs(dx); j = j + (abs(dx) * 2)) {
+    for (int i = y - dy; i <= y + dy; i = i + (dy * 2)) {
+        for (int j = x - dx; j <= x + dx; j = j + (dx * 2)) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
             if (is_empty(p)) {
@@ -146,9 +165,8 @@ void move_square(int x, int y, int dx, int dy, e_piece type, uint64_t* moves)
 }
 void move_knight(int x, int y, e_piece type, uint64_t* moves)
 {
-    //TODO:refactor
-    move_square(x, y, -1, -2, type, moves); // wide
-    move_square(x, y, -2, -1, type, moves); // long
+    move_square(x, y, 1, 2, type, moves); // wide
+    move_square(x, y, 2, 1, type, moves); // long
 }
 
 

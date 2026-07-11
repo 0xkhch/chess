@@ -77,6 +77,12 @@ void draw_board(Texture2D* pieces)
             else {
                 DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_SHADE : DARK_SHADE);
             }
+
+            if (global.prev.type != e_EMPTY) {
+                if ((global.prev.fx == j && global.prev.fy == i) || (global.prev.tx == j && global.prev.ty == i)) {
+                    DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_GREEN: DARK_GREEN);
+                }
+            }
 #ifdef DEBUG
             bool heat = (bool)get_bit(global.heatmap, j, i);
             if (heat) {
