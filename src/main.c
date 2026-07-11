@@ -9,7 +9,6 @@
 #include "capture.h"
 global_state_t global = {};
 
-// en passant checks
 // pin checks
 //TODO: promotion
 //TODO: start and end screen

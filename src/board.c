@@ -60,25 +60,6 @@ void find_moves(int x, int y, e_piece type, uint64_t* moves)
         break;
     }
 }
-void move_if_valid(int x, int y, e_piece type, uint64_t* moves)
-{
-    set_bit(*moves, x, y);
-    if (in_single_check_by_slider(type)) {
-        if (!get_bit(global.checking_moves, x, y)) {
-            unset_bit(*moves, x, y);
-        }
-    }
-}
-
-void capture_if_valid(int x, int y, e_piece type, uint64_t* moves)
-{
-    set_bit(*moves, x, y);
-    if (in_single_check(type)) {
-        if (x != global.checking_x || y != global.checking_y) {
-            unset_bit(*moves, x, y);
-        }
-    }
-}
 
 int abs(int a) {
     return a < 0 ? -a : a;
@@ -95,6 +76,28 @@ bool en_passantable(int x, int y, e_piece type)
         }
     }
     return false;
+}
+
+void move_if_valid(int x, int y, e_piece type, uint64_t* moves)
+{
+    set_bit(*moves, x, y);
+    if (in_single_check_by_slider(type)) {
+        if (!get_bit(global.checking_moves, x, y)) {
+            unset_bit(*moves, x, y);
+        }
+    }
+}
+
+void capture_if_valid(int x, int y, e_piece type, uint64_t* moves)
+{
+    set_bit(*moves, x, y);
+    if (in_single_check(type)) {
+        if (x != global.checking_x || y != global.checking_y) {
+            if (!(global.checked && global.en_passant)) {
+                unset_bit(*moves, x, y);
+            }
+        }
+    }
 }
 
 void move_pawn(int x, int y, e_piece type, uint64_t* moves)
@@ -131,8 +134,8 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
             capture_if_valid(x - 1, y + 1, type, moves);
         }
         if (en_passantable(x, y, type)) {
-            global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y + 1, type, moves) : capture_if_valid(x + 1, y + 1, type, moves);
             global.en_passant = true;
+            global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y + 1, type, moves) : capture_if_valid(x + 1, y + 1, type, moves);
         }
     }
 }
@@ -283,9 +286,9 @@ void check()
     global.king_y = y;
 
     uint64_t moves = 0;
-    board[y * GRID_Y + x] = e_EMPTY;
+    // board[y * GRID_Y + x] = e_EMPTY;
     build_heatmap(global.turn == t_WHITE ? w_KING : b_KING, &moves);
-    board[y * GRID_Y + x] = global.turn == t_WHITE ? w_KING : b_KING;
+    // board[y * GRID_Y + x] = global.turn == t_WHITE ? w_KING : b_KING;
     global.heatmap = moves;
 
     bool heat = (bool)get_bit(moves, x, y);
@@ -508,5 +511,5 @@ bool is_slider(e_piece a)
 
 bool in_single_check_by_slider(e_piece p)
 {
-    return in_single_check(p) && is_slider(board_at(global.checking_x, global.checking_y));
+    return (in_single_check(p) && is_slider(board_at(global.checking_x, global.checking_y))) || in_single_check(p);
 }
