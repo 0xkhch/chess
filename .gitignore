@@ -2,4 +2,3 @@ build/
 *.json
 .cache/
 *.png
-*.txt
