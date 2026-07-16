@@ -17,6 +17,14 @@
    -3 = black knight
    -1 = black pawn
 */
+
+typedef struct {
+    uint64_t heatmap;
+    int amount_checked;
+    int checking_x;
+    int checking_y;
+} heat_map;
+
 #define BOARD_AT(board, x,y) board[(y) * GRID_X + (x)]
 extern e_piece board[GRID_X * GRID_Y];
 extern void reset_heatmap(bool type);

@@ -9,9 +9,6 @@
 #include "capture.h"
 global_state_t global = {};
 
-// pin checks
-//TODO: promotion
-//TODO: start and end screen
 
 bool save_board()
 {
@@ -71,11 +68,11 @@ int main(int argc, char** argv)
     Texture2D pieces   = LoadTextureFromImage(pieces_img);
     Sound move_sound = LoadSoundFromWave(move_wav);
     Sound capture_sound = LoadSoundFromWave(capture_wav);
-
     int x = 0;
     int y = 0;
-    SetTargetFPS(165);
 
+    SetTargetFPS(165);
+    check();
     while (!WindowShouldClose()) { 
         Vector2 mouse_pos = GetMousePosition();
         x = (mouse_pos.x / CELL_X);
@@ -84,7 +81,7 @@ int main(int argc, char** argv)
         global.mouse_pos_y = y;
 
 
-        if (IsKeyPressed(KEY_S)) {
+        if (IsKeyPressed(KEY_S) && global.screen_state == PLAY) {
             save_board();
         }
         if (IsKeyPressed(KEY_L)) {
@@ -96,21 +93,64 @@ int main(int argc, char** argv)
             char buffer[64] = {};
             fread(buffer, sizeof(char), 64, f);
             load_board(buffer);
-
+            global.screen_state = PLAY;
             global.selected_moves = 0;
+            global.heatmap = 0;
             global.state = s_NONE;
             global.prev.type = e_EMPTY;
 
+            check();
             printf("INFO: loaded board.\n");
             fclose(f);
         }
 
         BeginDrawing();
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                control(&move_sound, &capture_sound, x, y);
-            }
-            draw_board(&pieces);
             ClearBackground(WHITE);
+            switch (global.screen_state) {
+            case INTRO:
+#ifdef DEBUG
+    global.screen_state = MENU;
+#endif /* ifdef DEBUG */
+                draw_intro();
+                break;
+            case MENU:
+                draw_menu(&pieces);
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && global.inside_option) {
+                    global.screen_state = PLAY;
+                }
+                break;
+            case PLAY:
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    control(&move_sound, &capture_sound, x, y);
+                }
+                draw_board(&pieces);
+                break;
+            case PROMO:
+                draw_promo(&pieces);
+                if (global.mouse_pos_x >= 2 && global.mouse_pos_x < 6 && global.mouse_pos_y == 4) {
+                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                        if (global.mouse_pos_x == 2) {
+                            board[global.promo_y * GRID_X + global.promo_x] = global.turn == t_WHITE ? w_QUEEN: b_QUEEN;
+                        }
+                        if (global.mouse_pos_x == 3) {
+                            board[global.promo_y * GRID_X + global.promo_x] = global.turn == t_WHITE ? w_ROOK: b_ROOK;
+                        }
+                        if (global.mouse_pos_x == 4) {
+                            board[global.promo_y * GRID_X + global.promo_x] = global.turn == t_WHITE ? w_BISHOP: b_BISHOP;
+                        }
+                        if (global.mouse_pos_x == 5) {
+                            board[global.promo_y * GRID_X + global.promo_x] = global.turn == t_WHITE ? w_KNIGHT: b_KNIGHT;
+                        }
+                        global.screen_state = PLAY;
+                        global.turn = !global.turn;
+                        check();
+                    }
+                }
+                break;
+            case END:
+                draw_end(&pieces);
+                break;
+            }
 
 #ifdef DEBUG
             DrawFPS(0, 0);

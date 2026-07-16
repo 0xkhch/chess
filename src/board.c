@@ -254,10 +254,11 @@ void find_piece_position(int* x, int* y, e_piece type)
     }
 
 }
-void build_heatmap(e_piece type, uint64_t* moves)
+
+heat_map build_heatmap(e_piece type)
 {
+    heat_map heatmap = {};
     uint64_t local = 0;
-    uint64_t amount_checking = 0;
     for (int i = 0; i < GRID_Y; i++) {
         for (int j = 0; j < GRID_X; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
@@ -266,16 +267,16 @@ void build_heatmap(e_piece type, uint64_t* moves)
                 find_moves(j, i, p, &local);
                 bool heat = (bool)get_bit(local, global.king_x, global.king_y);
                 if (heat) {
-                    global.checking_x = j;
-                    global.checking_y = i;
-                    amount_checking++;
+                    heatmap.checking_x = j;
+                    heatmap.checking_y = i;
+                    heatmap.amount_checked++;
                 }
-                *moves = *moves | local;
+                heatmap.heatmap = heatmap.heatmap | local;
                 local = 0;
             }
         }
     }
-    global.amount_checked = amount_checking;
+    return heatmap;
 }
 
 void check()
@@ -285,13 +286,14 @@ void check()
     global.king_x = x;
     global.king_y = y;
 
-    uint64_t moves = 0;
-    // board[y * GRID_Y + x] = e_EMPTY;
-    build_heatmap(global.turn == t_WHITE ? w_KING : b_KING, &moves);
-    // board[y * GRID_Y + x] = global.turn == t_WHITE ? w_KING : b_KING;
-    global.heatmap = moves;
+    heat_map enemy = build_heatmap(global.turn == t_WHITE ? w_KING : b_KING);
 
-    bool heat = (bool)get_bit(moves, x, y);
+    global.amount_checked = enemy.amount_checked;
+    global.checking_x = enemy.checking_x;
+    global.checking_y = enemy.checking_y;
+    global.heatmap = enemy.heatmap;
+
+    bool heat = (bool)get_bit(enemy.heatmap, x, y);
     global.checked = (heat && global.turn == t_WHITE) ? c_WHITE : c_BLACK;
     global.amount_checked = heat ? global.amount_checked : 0;
     if (global.amount_checked > 1 && global.state == s_SELECT) { // only way is to move king
@@ -313,12 +315,24 @@ void check()
     if (global.amount_checked > 0) {
         global.castling = false;
     }
+
+    heat_map our = build_heatmap(global.turn == t_WHITE ? b_KING : w_KING);
+    if (our.heatmap == 0 && global.amount_checked > 0) {
+        global.screen_state = END;
+        global.draw = false;
+    }
+    if (our.heatmap == 0 && global.amount_checked == 0) {
+        global.screen_state = END;
+        global.draw = true;
+    }
     //find our heatmap, if it is 0 then we and amount_checking is 0 then draw, otherwise we lost
 }
 
 void move_king(int x, int y, e_piece type, uint64_t* moves)
-{ 
+{
+
     uint64_t heatmap = global.heatmap;
+
     for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;

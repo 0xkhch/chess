@@ -82,6 +82,15 @@ void execute_move(Sound* move_sound, Sound* capture_sound, int x, int y)
             board[b_pos(global.selected_x + 1, y)] = global.selected_type == w_KING ? w_ROOK : b_ROOK;
         }
     }
+
+    if(is_pawn(global.selected_type)) {
+        if ((global.turn == t_WHITE && y == 0) || (global.turn != t_WHITE && y == 7)) {
+            global.screen_state = PROMO;
+            global.promo_x = x;
+            global.promo_y = y;
+        }
+    }
+
     board[b_pos(x, y)] = src;
     board[b_pos(global.selected_x, global.selected_y)] = e_EMPTY;
 
@@ -92,9 +101,11 @@ void execute_move(Sound* move_sound, Sound* capture_sound, int x, int y)
 
     global.prev.tx = x;
     global.prev.ty = y;
-
-    global.turn = !global.turn;
-    check();
+    
+    if (global.screen_state == PLAY) {
+        global.turn = !global.turn;
+        check();
+    }
     clear_selection();
 }
 

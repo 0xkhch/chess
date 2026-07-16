@@ -44,6 +44,14 @@ typedef struct last_move {
     e_piece type;
 } last_move;
 
+typedef enum {
+    INTRO,
+    MENU,
+    END,
+    PLAY,
+    PROMO
+} e_screen_state;
+
 typedef struct global_state {
     int selected_x;
     int selected_y;
@@ -56,6 +64,11 @@ typedef struct global_state {
 
     int checking_x;
     int checking_y;
+
+
+    int promo_x;
+    int promo_y;
+
     uint64_t amount_checked;
     uint64_t checking_moves;
 
@@ -67,8 +80,12 @@ typedef struct global_state {
     e_piece selected_type;
     e_state state;
     e_check checked;
+    e_screen_state screen_state;
+
     bool turn;
     bool en_passant;
     bool castling;
+    bool inside_option;
+    bool draw;
 } global_state_t;
 #endif // !COMMON_H_

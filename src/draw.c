@@ -19,46 +19,46 @@ Rectangle type_to_rect(e_piece type)
 #define PIECE_HEIGHT ((float)256/2)
 
     switch (type) {
-        case e_EMPTY: {
-            return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case b_PAWN: {
-            return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case b_KNIGHT: {
-            return (Rectangle){128.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case b_BISHOP: {
-            return (Rectangle){256.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case b_ROOK: {
-            return (Rectangle){384.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case b_QUEEN: {
-            return (Rectangle){512.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case b_KING: {
-            return (Rectangle){640.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
+    case e_EMPTY: {
+        return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case b_PAWN: {
+        return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case b_KNIGHT: {
+        return (Rectangle){128.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case b_BISHOP: {
+        return (Rectangle){256.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case b_ROOK: {
+        return (Rectangle){384.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case b_QUEEN: {
+        return (Rectangle){512.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case b_KING: {
+        return (Rectangle){640.0f, 0.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
 
-        case w_PAWN: {
-            return (Rectangle){0.0f,   128.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case w_KNIGHT: {
-            return (Rectangle){128.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case w_BISHOP: {
-            return (Rectangle){256.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case w_ROOK: {
-            return (Rectangle){384.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case w_QUEEN: {
-            return (Rectangle){512.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
-        case w_KING: {
-            return (Rectangle){640.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
-        } break;
+    case w_PAWN: {
+        return (Rectangle){0.0f,   128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case w_KNIGHT: {
+        return (Rectangle){128.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case w_BISHOP: {
+        return (Rectangle){256.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case w_ROOK: {
+        return (Rectangle){384.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case w_QUEEN: {
+        return (Rectangle){512.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
+    case w_KING: {
+        return (Rectangle){640.0f, 128.0f, PIECE_WIDTH, PIECE_HEIGHT};
+    } break;
     }
     return (Rectangle){0.0f, 0.0f,   PIECE_WIDTH, PIECE_HEIGHT}; // suppress stupid warning
 }
@@ -78,25 +78,25 @@ void draw_board(Texture2D* pieces)
                 DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_SHADE : DARK_SHADE);
             }
 
-            if (global.prev.type != e_EMPTY) {
+            if (global.prev.type != e_EMPTY && global.screen_state == PLAY) {
                 if ((global.prev.fx == j && global.prev.fy == i) || (global.prev.tx == j && global.prev.ty == i)) {
                     DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_GREEN: DARK_GREEN);
                 }
             }
 #ifdef DEBUG
             bool heat = (bool)get_bit(global.heatmap, j, i);
-            if (heat) {
+            if (heat && global.screen_state == PLAY) {
                 DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, TRANS_PURPLE_DARK);
             }
 #endif /* ifdef DEBUG */
 
             e_piece type = board[i * GRID_X + j];
-            if (is_checked(type)) {
+            if (is_checked(type) && global.screen_state == PLAY) {
                 DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, TRANS_RED_DARK);
             }
 
             // draw pieces
-            if (type != e_EMPTY) {
+            if (type != e_EMPTY && global.screen_state == PLAY) {
                 Vector2 pos = (Vector2) {
                     .x = (j * CELL_X) - (128 * j), 
                     .y = (i * CELL_Y) - (128 * i)
@@ -108,7 +108,7 @@ void draw_board(Texture2D* pieces)
             }
 
             // draw circles
-            if (possible_move) {
+            if (possible_move && global.screen_state == PLAY) {
 #ifdef DEBUG
                 DrawText(TextFormat("x: %d y: %d", j, i), j * CELL_X, i * CELL_Y, 16, RED);
 #endif /* ifdef DEBUG */
@@ -118,6 +118,127 @@ void draw_board(Texture2D* pieces)
     }
 }
 
+void draw_intro()
+{
+    static unsigned int frame = 0;
+    ClearBackground(LIGHT_SHADE);
+    if (frame == 0xFF) global.screen_state = MENU;
+    char* text = "Kays";
+    int font_size = 64;
+    int text_size = MeasureText(text, font_size);
+    Color color = (Color){.r = 0x00, .g = 0x00, .b = 0x00, .a = frame};
+    DrawText(text, WIDTH/2 - text_size/2, HEIGHT/2 - font_size, font_size, color);
+    frame++;
+}
+
+void draw_menu(Texture2D* pieces)
+{
+    draw_board(pieces);
+    char* title = "Chess";
+    int t_font_size = 64;
+    DrawText(title, 0, HEIGHT/2 - (t_font_size * 2 - 13), t_font_size, BLACK);
+
+    char* option = "Play game";
+    int o_font_size = 39;
+    if (global.mouse_pos_x >= 2 && global.mouse_pos_x <= 5 && global.mouse_pos_y == 4) {
+        o_font_size = 44;
+        global.inside_option = true;
+    }
+    else {
+        global.inside_option = false;
+    }
+    int o_text_size = MeasureText(option, o_font_size);
+    DrawText(option, WIDTH/2 - o_text_size/2, HEIGHT/2 - (o_font_size/2) + CELL_Y/2, o_font_size, WHITE);
+
+    Vector2 pos = (Vector2) {
+        .x = 32.0f,
+        .y = 32.0f
+    };
+
+    Rectangle texture_dest_w = {.x = 238.0f, .y = 160.0f, .width = 64.0f, .height = 64.0f};
+    DrawTexturePro(*pieces, type_to_rect(w_PAWN), texture_dest_w, pos, 30, WHITE);
+
+    Rectangle texture_dest_b = {.x = 206.0f, .y = 160.0f, .width = 64.0f, .height = 64.0f};
+    DrawTexturePro(*pieces, type_to_rect(b_PAWN), texture_dest_b, pos, -30, WHITE);
+}
+
+void draw_promo(Texture2D* pieces)
+{
+    draw_board(pieces);
+
+    const int y = 4;
+    const int start_x = 2;
+
+    int white_pieces[4] = {w_QUEEN, w_ROOK, w_BISHOP, w_KNIGHT};
+    int black_pieces[4] = {b_QUEEN, b_ROOK, b_BISHOP, b_KNIGHT};
+
+    int* piece_set = global.turn == t_WHITE ? white_pieces : black_pieces;
+
+    for (int i = 0; i < 4; i++)
+    {
+        int board_x = start_x + i;
+        bool hovered = (global.mouse_pos_x == board_x &&
+                        global.mouse_pos_y == y);
+
+        Rectangle dest = {
+            .x = hovered ? -3.0f : 0.0f,
+            .y = hovered ? -6.0f : 0.0f,
+            .width  = hovered ? 70.0f : 64.0f,
+            .height = hovered ? 70.0f : 64.0f
+        };
+
+        Vector2 pos = {
+            .x = (board_x * CELL_X) - (128 * board_x),
+            .y = (y * CELL_Y) - (128 * y)
+        };
+
+        DrawTexturePro(*pieces,
+                       type_to_rect(piece_set[i]),
+                       dest,
+                       pos,
+                       0.0f,
+                       WHITE);
+    }
+}
+void draw_end(Texture2D* pieces)
+{
+    draw_board(pieces);
+    bool winner = !global.turn;
+    if (global.draw) {
+        char* title = "Draw!";
+        int t_font_size = 64;
+        int t_text_size = MeasureText(title, t_font_size);
+        DrawText(title, WIDTH/2 - t_text_size/2, HEIGHT/2 - (t_font_size * 3 - 13), t_font_size, BLACK);
+    }
+    else {
+        int t_font_size = 64;
+        if (winner == t_WHITE) {
+            char* title = "White won!";
+            int t_text_size = MeasureText(title, t_font_size);
+            t_text_size = MeasureText(title, t_font_size);
+            DrawText(title, WIDTH/2 - t_text_size/2, HEIGHT/2 - (t_font_size * 3 - 13), t_font_size, BLACK);
+        }
+        else {
+            char* title = "Black won!";
+            int t_text_size = MeasureText(title, t_font_size);
+            t_text_size = MeasureText(title, t_font_size);
+            DrawText(title, WIDTH/2 - t_text_size/2, HEIGHT/2 - (t_font_size * 3 - 13), t_font_size, BLACK);
+
+        }
+    }
+
+    // y = 4 x = 3
+    Vector2 pos = (Vector2) {
+        .x = 32.0f,
+        .y = 32.0f
+    };
+    float texture_x = 64.0f * 4 + 32.0f;
+    Rectangle texture_dest_w = {.x = texture_x - 64.0f, .y = 64.0f * 3 + 32.0f, .width = 64.0f, .height = 64.0f};
+    DrawTexturePro(*pieces, type_to_rect(b_KING), texture_dest_w, pos, 0, WHITE);
+
+    Rectangle texture_dest_b = {.x = texture_x, .y = 64.0f * 4 + 32.0f, .width = 64.0f, .height = 64.0f};
+    DrawTexturePro(*pieces, type_to_rect(w_KING), texture_dest_b, pos, 0, WHITE);
+}
 bool is_checked(e_piece type)
 {
     return ((type == b_KING && global.checked == c_BLACK) || (type == w_KING && global.checked == c_WHITE)) && global.amount_checked > 0;
