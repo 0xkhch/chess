@@ -68,10 +68,10 @@ int abs(int a) {
 bool en_passantable(int x, int y, e_piece type)
 {
     if (is_enemy(type, global.prev.type)) {
-        if (y == 3 && abs((global.prev.ty - global.prev.fy)) == 2) {
+        if (y == 3 && abs((global.prev.ty - global.prev.fy)) == 2 && ((global.prev.tx == (x - 1)) || (global.prev.tx == (x + 1)))) {
             return true;
         }
-        if (y == 4 && abs((global.prev.ty - global.prev.fy)) == 2) {
+        if (y == 4 && abs((global.prev.ty - global.prev.fy)) == 2 && ((global.prev.tx == (x - 1)) || (global.prev.tx == (x + 1)))) {
             return true;
         }
     }
