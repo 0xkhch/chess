@@ -7,7 +7,7 @@
 #include "pieces.h"
 #include "move.h"
 #include "capture.h"
-global_state_t global = {};
+global_state_t global = {0};
 
 
 bool save_board()
@@ -68,6 +68,7 @@ int main(int argc, char** argv)
     Texture2D pieces   = LoadTextureFromImage(pieces_img);
     Sound move_sound = LoadSoundFromWave(move_wav);
     Sound capture_sound = LoadSoundFromWave(capture_wav);
+
     int x = 0;
     int y = 0;
 

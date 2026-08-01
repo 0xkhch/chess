@@ -24,13 +24,19 @@
 #define t_BLACK true
 
 // bit board stuff
-#define get_bit(i, x, y) ((i >> (63 - ((y) * (GRID_Y) + (x)))) & 1UL)
+#if defined(_WIN32)
+#define get_bit(i, x, y) ((i >> (63 - ((y) * (GRID_Y) + (x)))) & 1ULL)
+#define set_bit(i, x, y) ((i) |= (1ULL << (63 - ((y) * GRID_Y + (x)))))
+#define unset_bit(i, x, y) (i &= ~(1ULL << (63 - ((y) * (GRID_Y) + (x)))))
 
+#else
+#define get_bit(i, x, y) ((i >> (63 - ((y) * (GRID_Y) + (x)))) & 1UL)
 #define set_bit(i, x, y) (i |= (1UL << (63 - ((y) * (GRID_Y) + (x)))))
 #define set_bit_offset(i, offset) (i |= (1UL << (offset)))
 
 #define unset_bit(i, x, y) (i &= ~(1UL << (63 - ((y) * (GRID_Y) + (x)))))
 #define unset_bit_offset(i, offset) (i &= ~(1UL << (offset)))
+#endif // _WIN32
 
 typedef struct last_move {
     // from
