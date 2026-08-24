@@ -138,7 +138,7 @@ void draw_intro()
     int font_size = 64;
     int text_size = MeasureText(text, font_size);
     Color color = (Color){.r = 0x00, .g = 0x00, .b = 0x00, .a = frame};
-    DrawText(text, WIDTH/2 - text_size/2, HEIGHT/2 - font_size, font_size, color);
+    DrawText(text, WIDTH/2 - text_size/2, HEIGHT/2 - font_size/2, font_size, color);
     frame++;
 }
 
@@ -254,8 +254,8 @@ void draw_end(Texture2D* pieces)
 void draw_error(Texture2D* pieces)
 {
     draw_board(pieces);
-    char* title = "whoopsie...";
-    int t_font_size = 64;
-    int t_text_size = MeasureText(title, t_font_size);
-    DrawText(title, WIDTH/2 - t_text_size/2, HEIGHT/2  - (t_font_size/2), t_font_size, BLACK);
+    char* text = "whoopsie...";
+    int font_size = 64;
+    int text_size = MeasureText(text, font_size);
+    DrawText(text, WIDTH/2 - text_size/2, HEIGHT/2  - (font_size/2), font_size, BLACK);
 }

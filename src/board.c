@@ -21,10 +21,10 @@ void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* 
 bool in_single_check_by_slider(e_piece p);
 bool can_castle_right(int x, int y, e_piece type);
 bool can_castle_left(int x, int y, e_piece type);
-bool check_pinned(int x, int y, e_piece type);
+bool check_pinned(int x, int y);
 
 void find_selected_moves() {
-    global.selected_pinned = check_pinned(global.selected_x, global.selected_y, global.selected_type);
+    global.selected_pinned = check_pinned(global.selected_x, global.selected_y);
     find_moves(global.selected_x, global.selected_y, global.selected_type, &global.selected_moves);
 }
 
@@ -73,7 +73,7 @@ int sign(int a)
     return a == 0 ? 0 : (a > 0 ? 1 : -1);
 }
 
-bool check_pinned(int x, int y, e_piece type)
+bool check_pinned(int x, int y)
 {
     int dx = x - global.king_x;
     int dy = y - global.king_y;
