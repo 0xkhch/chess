@@ -54,7 +54,7 @@ bool load_file(char* src)
         return false;
     }
     global_state_t zero_state = {0};
-    copy_state(&global, &zero_state);
+    global = zero_state;
     char buffer[64] = {};
     fread(buffer, sizeof(char), 64, f);
     load_board(buffer);
@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z) && global.screen_state == PLAY && global.moves_counter != 0) {
             copy_board(board, last_board);
-            copy_state(&global, &previous);
+            global = previous;
             clear_selection();
         }
 

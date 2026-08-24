@@ -48,7 +48,6 @@ bool is_friendly(e_piece piece, bool turn);
 bool is_opposite(e_piece piece, bool turn);
 bool is_checked(e_piece type);
 void copy_board(e_piece* dst, e_piece* src);
-void copy_state(global_state_t* dst, global_state_t* src);
 
 extern global_state_t global;
 
