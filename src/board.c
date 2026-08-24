@@ -403,6 +403,9 @@ void check()
         heat_map enemy = build_heatmap(global.turn == t_WHITE ? w_KING : b_KING);
 
         global.amount_checked = enemy.amount_checked;
+        if (global.amount_checked == 0) {
+            global.checking_moves = 0;
+        }
         global.checking_x = enemy.checking_x;
         global.checking_y = enemy.checking_y;
         global.heatmap = enemy.heatmap;

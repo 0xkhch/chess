@@ -119,6 +119,7 @@ int main(int argc, char** argv)
             copy_board(board, last_board);
             global = previous;
             clear_selection();
+            check();
         }
 
         BeginDrawing();
