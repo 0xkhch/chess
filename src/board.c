@@ -183,48 +183,48 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
 {
     if (type == w_PAWN) {
         if (generating_attacks) {
-            if (x != GRID_X - 1) set_bit(*moves, x + 1, y - 1);
-            if (x != 0)          set_bit(*moves, x - 1, y - 1);
-            return;
-        }
-        if (is_empty(board_at(x, y - 1))) {
-            move_if_valid(x, y - 1, type, moves);
-            if (is_empty(board_at(x, y - 2)) && y == 6) {
-                move_if_valid(x, y - 2, type, moves);
+            if (x != GRID_X - 1 && y != 0) set_bit(*moves, x + 1, y - 1);
+            if (x != 0 && y != 0)          set_bit(*moves, x - 1, y - 1);
+        } else {
+            if (is_empty(board_at(x, y - 1))) {
+                move_if_valid(x, y - 1, type, moves);
+                if (is_empty(board_at(x, y - 2)) && y == 6) {
+                    move_if_valid(x, y - 2, type, moves);
+                }
             }
-        }
-        if (x != GRID_X - 1 && (is_black(board_at(x + 1, y - 1)) || is_white(board_at(x + 1, y - 1)))) {
-            capture_if_valid(x + 1, y - 1, type, moves);
-        }
-        if (x != 0 && (is_black(board_at(x - 1, y - 1)) || is_white(board_at(x - 1, y - 1)))) {
-            capture_if_valid(x - 1, y - 1, type, moves);
-        }
-        if (en_passantable(x, y, type)) {
-            global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y - 1, type, moves) : capture_if_valid(x + 1, y - 1, type, moves);
-            global.en_passant = true;
+            if (x != GRID_X - 1 && (is_black(board_at(x + 1, y - 1)) || is_white(board_at(x + 1, y - 1)))) {
+                capture_if_valid(x + 1, y - 1, type, moves);
+            }
+            if (x != 0 && (is_black(board_at(x - 1, y - 1)) || is_white(board_at(x - 1, y - 1)))) {
+                capture_if_valid(x - 1, y - 1, type, moves);
+            }
+            if (en_passantable(x, y, type)) {
+                global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y - 1, type, moves) : capture_if_valid(x + 1, y - 1, type, moves);
+                global.en_passant = true;
+            }
         }
     }
     else if (type == b_PAWN) {
         if (generating_attacks) {
-            if (x != GRID_X - 1) set_bit(*moves, x + 1, y + 1);
-            if (x != 0)          set_bit(*moves, x - 1, y + 1);
-            return;
-        }
-        if (is_empty(board_at(x, y + 1))) {
-            move_if_valid(x, y + 1, type, moves);
-            if (is_empty(board_at(x, y + 2)) && y == 1) {
-                move_if_valid(x, y + 2, type, moves);
+            if (x != GRID_X - 1 && y != GRID_Y - 1) set_bit(*moves, x + 1, y + 1);
+            if (x != 0 && y != GRID_Y - 1)          set_bit(*moves, x - 1, y + 1);
+        } else {
+            if (is_empty(board_at(x, y + 1))) {
+                move_if_valid(x, y + 1, type, moves);
+                if (is_empty(board_at(x, y + 2)) && y == 1) {
+                    move_if_valid(x, y + 2, type, moves);
+                }
             }
-        }
-        if (x != GRID_X - 1 && (is_white(board_at(x + 1, y + 1)) || is_black(board_at(x + 1, y + 1)))) {
-            capture_if_valid(x + 1, y + 1, type, moves);
-        }
-        if (x != 0 && (is_white(board_at(x - 1, y + 1)) || is_black(board_at(x - 1, y + 1)))) {
-            capture_if_valid(x - 1, y + 1, type, moves);
-        }
-        if (en_passantable(x, y, type)) {
-            global.en_passant = true;
-            global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y + 1, type, moves) : capture_if_valid(x + 1, y + 1, type, moves);
+            if (x != GRID_X - 1 && (is_white(board_at(x + 1, y + 1)) || is_black(board_at(x + 1, y + 1)))) {
+                capture_if_valid(x + 1, y + 1, type, moves);
+            }
+            if (x != 0 && (is_white(board_at(x - 1, y + 1)) || is_black(board_at(x - 1, y + 1)))) {
+                capture_if_valid(x - 1, y + 1, type, moves);
+            }
+            if (en_passantable(x, y, type)) {
+                global.en_passant = true;
+                global.prev.tx == (x - 1) ? capture_if_valid(x - 1, y + 1, type, moves) : capture_if_valid(x + 1, y + 1, type, moves);
+            }
         }
     }
 }
@@ -422,14 +422,35 @@ void check()
             global.castling = false;
         }
 
-        heat_map our = build_heatmap(global.turn == t_WHITE ? b_KING : w_KING);
-        if (our.heatmap == 0 && global.amount_checked > 0) {
-            global.screen_state = END;
-            global.draw = false;
+        bool has_move = false;
+        for (int i = 0; i < GRID_Y && !has_move; i++) {
+            for (int j = 0; j < GRID_X && !has_move; j++) {
+                e_piece p = board_at(j, i);
+                if (!is_friendly(p, global.turn)) continue;
+
+                uint64_t m = 0;
+                bool saved_pinned = global.selected_pinned;
+                uint64_t saved_line = global.pin_line;
+                global.selected_pinned = check_pinned(j, i);
+                find_moves(j, i, p, &m);
+                global.selected_pinned = saved_pinned;
+                global.pin_line = saved_line;
+
+                // mask out ally-occupied squares (move_axis stamps them)
+                for (int a = 0; a < GRID_Y; a++)
+                    for (int b = 0; b < GRID_X; b++)
+                        if (!is_empty(board_at(b, a)) &&
+                            !is_enemy(p, board_at(b, a)) &&
+                            !(b == j && a == i))
+                            unset_bit(m, b, a);
+
+                if (m != 0) has_move = true;
+            }
         }
-        if (our.heatmap == 0 && global.amount_checked == 0) {
+
+        if (!has_move) {
             global.screen_state = END;
-            global.draw = true;
+            global.draw = (global.amount_checked == 0); // stalemate : checkmate
         }
     }
     else {
@@ -528,6 +549,7 @@ void set_turn(char c)
             global.turn = false;
         break;
         default:
+            global.turn = false;
         break;
     }
 }
