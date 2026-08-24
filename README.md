@@ -31,5 +31,10 @@ cd chess/
 make release && ./build/main
 ```
 
+## TODO
+- flip the board for each turn.
+- Seperate moving from capturing, one variable for each.
+- Seperate rendring from logic, would allow for multiplayer.
+
 ## Credits
 - [Legal move generation](https://peterellisjones.com/posts/generating-legal-chess-moves-efficiently/)
