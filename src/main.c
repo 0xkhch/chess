@@ -8,6 +8,7 @@
 #include "move.h"
 #include "capture.h"
 global_state_t global = {0};
+global_state_t previous = {0};
 
 
 bool save_board()
@@ -114,6 +115,12 @@ int main(int argc, char** argv)
             FilePathList files = LoadDroppedFiles();
             load_file(files.paths[files.count - 1]); // load last dropped file
             UnloadDroppedFiles(files);
+        }
+
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z) && global.screen_state == PLAY && global.moves_counter != 0) {
+            copy_board(board, last_board);
+            copy_state(&global, &previous);
+            clear_selection();
         }
 
         BeginDrawing();

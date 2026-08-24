@@ -64,6 +64,9 @@ void execute_move(Sound* move_sound, Sound* capture_sound, int x, int y)
 
 
     dst != e_EMPTY ? PlaySound(*capture_sound) : PlaySound(*move_sound);
+    global.moves_counter++;
+    copy_board(last_board, board);
+    copy_state(&previous, &global);
 
     if (is_pawn(global.selected_type) && global.en_passant) {
         int direction = (global.selected_type == w_PAWN) ? 1 : -1;

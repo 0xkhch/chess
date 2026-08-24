@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <assert.h>
 #include <stdint.h>
+#include <string.h>
 #include "raylib.h"
 #include "piece.h"
 
@@ -89,6 +90,8 @@ typedef struct global_state {
     uint64_t heatmap;
 
     last_move prev;
+    
+    int moves_counter;
 
     e_piece selected_type;
     e_state state;
@@ -100,5 +103,6 @@ typedef struct global_state {
     bool castling;
     bool inside_option;
     bool draw;
+
 } global_state_t;
 #endif // !COMMON_H_

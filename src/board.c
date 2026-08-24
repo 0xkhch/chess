@@ -3,6 +3,8 @@
 #include "stdlib.h"
 
 e_piece board[BOARD_SIZE] = {0};
+e_piece last_board[BOARD_SIZE] = {0};
+
 bool generating_attacks = false; // hack fix for pawns
 
 void move_pawn(int x,   int y, e_piece type, uint64_t* moves);
@@ -114,6 +116,7 @@ bool check_pinned(int x, int y, e_piece type)
                 }
                 return false;
             }
+            return false;
         }
         set_bit(pin_line, p_x, p_y);
         p_x = p_x + dx;
@@ -467,19 +470,35 @@ void move_king(int x, int y, e_piece type, uint64_t* moves)
     heat_map enemy = build_heatmap(global.turn == t_WHITE ? w_KING : b_KING);
     board[y * GRID_X + x] = type;
 
+    int k_x = 0, k_y = 0;
+    bool found = find_piece_position(&k_x, &k_y, global.turn == t_WHITE ? b_KING : w_KING);
+
     for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
             bool heat = (bool)get_bit(heatmap, j, i);
             if (!heat && (is_empty(p) || is_enemy(type, p))) {
-            bool slider = (bool)get_bit(enemy.heatmap, j, i);
+                bool slider = (bool)get_bit(enemy.heatmap, j, i);
                 if (!slider) {
                     set_bit(*moves, j, i);
                 }
             }
         }
     }
+
+    for (int i = k_y - 1; i <= k_y + 1; i++) {
+        for (int j = k_x - 1; j <= k_x + 1; j++) {
+            if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
+            if (i == k_y && j == k_x) continue;
+            
+            bool our_king_move = (bool)get_bit(*moves, j, i);
+            if (our_king_move == 1) {
+                unset_bit(*moves, j, i);
+            }
+        }
+    }
+
     if (global.amount_checked == 0 && ((type == w_KING && y == 7) || (type == b_KING && y == 0))) {
         // king side castle
         if (can_castle_right(x, y, type)) {
@@ -692,3 +711,60 @@ bool is_checked(e_piece type)
 {
     return ((type == b_KING && global.checked == c_BLACK) || (type == w_KING && global.checked == c_WHITE)) && global.amount_checked > 0;
 }
+
+void copy_board(e_piece* dst, e_piece* src)
+{
+    for (int i = 0; i < GRID_Y; i++) {
+        for (int j = 0; j < GRID_X; j++) {
+            dst[i * GRID_X + j] = src[i * GRID_X + j];
+        }
+    }
+}
+
+void copy_state(global_state_t* dst, global_state_t* src)
+{
+    dst->selected_x = src->selected_x;
+    dst->selected_y = src->selected_y;
+
+    
+    dst->selected_pinned = src->selected_pinned ;
+    dst->pinned_by = src->pinned_by ;
+    dst->pinned_by_x = src->pinned_by_x ;
+    dst->pinned_by_y = src->pinned_by_y ;
+    dst->pin_line = src->pin_line ;
+
+    dst->mouse_pos_x = src->mouse_pos_x;
+    dst->mouse_pos_y = src->mouse_pos_y;
+    
+    dst->king_x = src->king_x;
+    dst->king_y = src->king_y;
+
+    dst->checking_x = src->checking_x;
+    dst->checking_y = src->checking_y;
+
+
+    dst->promo_x = src->promo_x;
+    dst->promo_y = src->promo_y;
+
+    dst->amount_checked = src->amount_checked;
+    dst->checking_moves = src->checking_moves;
+
+    dst->selected_moves = src->selected_moves;
+    dst->heatmap = src->heatmap;
+
+    dst->prev = src->prev;
+
+    dst->moves_counter = src->moves_counter;
+
+    dst->selected_type = src->selected_type;
+    dst->state = src->state;
+    dst->checked = src->checked;
+    dst->screen_state = src->screen_state;
+
+    dst->turn = src->turn;
+    dst->en_passant = src->en_passant;
+    dst->castling = src->castling;
+    dst->inside_option = src->inside_option;
+    dst->draw = src->draw;
+}
+
