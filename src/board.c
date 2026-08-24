@@ -103,6 +103,11 @@ bool check_pinned(int x, int y, e_piece type)
         p_y = p_y + dy;
     }
 
+    if (p_x == x && p_y == y) {
+        p_x = p_x + dx;
+        p_y = p_y + dy;
+    }
+
     while(p_x >= 0 && p_x < GRID_X && p_y >= 0 && p_y < GRID_Y) {
         e_piece p = board_at(p_x, p_y);
         if (!is_empty(p)) {

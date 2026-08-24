@@ -53,14 +53,12 @@ bool load_file(char* src)
         fprintf(stderr, "INFO: Failed to open file\n");
         return false;
     }
+    global_state_t zero_state = {0};
+    copy_state(&global, &zero_state);
     char buffer[64] = {};
     fread(buffer, sizeof(char), 64, f);
     load_board(buffer);
     global.screen_state = PLAY;
-    global.selected_moves = 0;
-    global.heatmap = 0;
-    global.state = s_NONE;
-    global.prev.type = e_EMPTY;
 
     check();
     printf("INFO: loaded board.\n");
