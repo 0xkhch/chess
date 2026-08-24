@@ -22,10 +22,10 @@ void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* 
 bool in_single_check_by_slider(e_piece p);
 bool can_castle_right(int x, int y, e_piece type);
 bool can_castle_left(int x, int y, e_piece type);
-bool check_pinned(int x, int y);
+bool check_pinned(int x, int y, e_piece type);
 
 void find_selected_moves() {
-    global.selected_pinned = check_pinned(global.selected_x, global.selected_y);
+    global.selected_pinned = check_pinned(global.selected_x, global.selected_y, global.selected_type);
     find_moves(global.selected_x, global.selected_y, global.selected_type, &global.selected_moves);
 }
 
@@ -74,7 +74,7 @@ int sign(int a)
     return a == 0 ? 0 : (a > 0 ? 1 : -1);
 }
 
-bool check_pinned(int x, int y)
+bool check_pinned(int x, int y, e_piece type)
 {
     int dx = x - global.king_x;
     int dy = y - global.king_y;
@@ -104,7 +104,7 @@ bool check_pinned(int x, int y)
     while(p_x >= 0 && p_x < GRID_X && p_y >= 0 && p_y < GRID_Y) {
         e_piece p = board_at(p_x, p_y);
         if (!is_empty(p)) {
-            if (is_enemy(p, global.selected_type)) {
+            if (is_enemy(p, type)) {
                 if (is_slider(p)) {
                     global.pinned_by = p;
                     global.pinned_by_x = p_x;
@@ -431,7 +431,7 @@ void check()
                 uint64_t m = 0;
                 bool saved_pinned = global.selected_pinned;
                 uint64_t saved_line = global.pin_line;
-                global.selected_pinned = check_pinned(j, i);
+                global.selected_pinned = check_pinned(j, i, p);
                 find_moves(j, i, p, &m);
                 global.selected_pinned = saved_pinned;
                 global.pin_line = saved_line;
