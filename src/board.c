@@ -3,6 +3,7 @@
 #include "stdlib.h"
 
 e_piece board[BOARD_SIZE] = {0};
+bool generating_attacks = false; // hack fix for pawns
 
 void move_pawn(int x,   int y, e_piece type, uint64_t* moves);
 void move_knight(int x, int y, e_piece type, uint64_t* moves);
@@ -124,6 +125,22 @@ bool check_pinned(int x, int y)
 bool en_passantable(int x, int y, e_piece type)
 {
     if (is_enemy(type, global.prev.type) && (global.prev.type == b_PAWN || global.prev.type == w_PAWN)) {
+        int dy = y - global.king_y;
+        int dx = x - global.king_x;
+        if (dy == 0) { // on the same rank
+            dx = sign(dx);
+            int p_x = global.king_x + dx;
+            int inbetween = 0;
+            while (p_x != x) {
+                if (!is_empty(board_at(p_x, global.king_y))) {
+                    inbetween++;
+                }
+                p_x = p_x + dx;
+            }
+            if (inbetween == 1) {
+                return false;
+            }
+        }
         if (y == 3 && abs((global.prev.ty - global.prev.fy)) == 2 && ((global.prev.tx == (x - 1)) || (global.prev.tx == (x + 1)))) {
             return true;
         }
@@ -157,11 +174,19 @@ void capture_if_valid(int x, int y, e_piece type, uint64_t* moves)
             }
         }
     }
+    if (global.selected_pinned && (get_bit(global.pin_line, x, y) == 0)) {
+        unset_bit(*moves, x, y);
+    }
 }
 
 void move_pawn(int x, int y, e_piece type, uint64_t* moves)
 {
     if (type == w_PAWN) {
+        if (generating_attacks) {
+            if (x != GRID_X - 1) set_bit(*moves, x + 1, y - 1);
+            if (x != 0)          set_bit(*moves, x - 1, y - 1);
+            return;
+        }
         if (is_empty(board_at(x, y - 1))) {
             move_if_valid(x, y - 1, type, moves);
             if (is_empty(board_at(x, y - 2)) && y == 6) {
@@ -180,6 +205,11 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
         }
     }
     else if (type == b_PAWN) {
+        if (generating_attacks) {
+            if (x != GRID_X - 1) set_bit(*moves, x + 1, y + 1);
+            if (x != 0)          set_bit(*moves, x - 1, y + 1);
+            return;
+        }
         if (is_empty(board_at(x, y + 1))) {
             move_if_valid(x, y + 1, type, moves);
             if (is_empty(board_at(x, y + 2)) && y == 1) {
@@ -314,8 +344,8 @@ void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* 
 
 bool find_piece_position(int* x, int* y, e_piece type)
 {
-    for (int i = 0; i <= GRID_Y; i++) {
-        for (int j = 0; j <= GRID_X; j++) {
+    for (int i = 0; i < GRID_Y; i++) {
+        for (int j = 0; j < GRID_X; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
             if (p == type) {
@@ -337,7 +367,9 @@ heat_map build_heatmap(e_piece type)
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
             if (is_enemy(type, p)) {
+                generating_attacks = true;
                 find_moves(j, i, p, &local);
+                generating_attacks = false;
                 bool heat = (bool)get_bit(local, global.king_x, global.king_y);
                 if (heat) {
                     heatmap.checking_x = j;
@@ -410,9 +442,9 @@ void move_king(int x, int y, e_piece type, uint64_t* moves)
 
     uint64_t heatmap = global.heatmap;
 
-    board[y * GRID_Y + x] = e_EMPTY;
+    board[y * GRID_X + x] = e_EMPTY;
     heat_map enemy = build_heatmap(global.turn == t_WHITE ? w_KING : b_KING);
-    board[y * GRID_Y + x] = type;
+    board[y * GRID_X + x] = type;
 
     for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
@@ -579,7 +611,7 @@ void print_board(uint64_t x) {
 
 e_piece board_at(int x, int y)
 {
-    return board[y * GRID_Y + x];
+    return board[y * GRID_X + x];
 }
 
 bool is_white(e_piece p)
