@@ -27,19 +27,25 @@ typedef struct {
 
 #define BOARD_AT(board, x,y) board[(y) * GRID_X + (x)]
 extern e_piece board[GRID_X * GRID_Y];
-extern void reset_heatmap(bool type);
-extern void find_selected_moves();
-extern void check();
+void reset_heatmap(bool type);
+void find_selected_moves();
+void check();
 
-extern void load_board(char* str);
-extern e_piece char_to_enum(char c);
-extern char enum_to_char(e_piece p);
-extern void set_turn(char c);
+void load_board(char* str);
+e_piece char_to_enum(char c);
+char enum_to_char(e_piece p);
+void set_turn(char c);
 
-extern e_piece board_at(int x, int y);
-extern bool is_white(e_piece p);
-extern bool is_empty(e_piece p);
-extern bool is_black(e_piece p);
+e_piece board_at(int x, int y);
+bool is_white(e_piece p);
+bool is_empty(e_piece p);
+bool is_black(e_piece p);
+bool is_enemy(e_piece a, e_piece b);
+bool is_pawn(e_piece p);
+bool is_king(e_piece p);
+bool is_friendly(e_piece piece, bool turn);
+bool is_opposite(e_piece piece, bool turn);
+bool is_checked(e_piece type);
 
 extern global_state_t global;
 

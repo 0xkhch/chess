@@ -4,14 +4,17 @@
 #define LIGHT_SHADE (Color){.r = 0xFF, .g = 0xCF, .b = 0x9F, .a = 0xFF}
 #define DARK_SHADE (Color){.r = 0xD2, .g = 0x8C, .b = 0x45, .a = 0xFF}
 
-#define LIGHT_GREEN (Color){.r = 0xAE, .g = 0xB1, .b = 0x87, .a = 0xFF}
-#define DARK_GREEN (Color){.r = 0x84, .g = 0x79, .b = 0x4e, .a = 0xFF}
+#define LIGHT_GREEN (Color){.r = 0xAE, .g = 0xB1, .b = 0x87, .a = 0xFF} // #AEB187
+#define INBETWEEN_GREEN (Color){.r = 0x9B, .g = 0x98, .b = 0x6D, .a = 0xFF} // #9B986D
+// #define INBETWEEN_GREEN (Color){.r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF} // #9B986D
+#define DARK_GREEN (Color){.r = 0x84, .g = 0x79, .b = 0x4e, .a = 0xFF} // #84794E
 
-#define DARK_GREEN (Color){.r = 0x84, .g = 0x79, .b = 0x4e, .a = 0xFF}
+
 #define TRANS_RED_DARK  (Color){.r = 0xBE, .g = 0x21, .b = 0x37, .a = 0xB0}
 #define TRANS_PURPLE_DARK  (Color){.r = 0x37, .g = 0x21, .b = 0xBE, .a = 0xB0}
 
 bool is_checked(e_piece type);
+bool is_opposite(e_piece piece, bool turn);
 
 Rectangle type_to_rect(e_piece type)
 {
@@ -71,7 +74,12 @@ void draw_board(Texture2D* pieces)
             // draw board
             bool is_light = ((j + i) % 2 == 0);
             bool possible_move = (bool)get_bit(global.selected_moves, j, i);
-            if(global.state == s_SELECT && possible_move && global.mouse_pos_x == j && global.mouse_pos_y == i) {
+            if (global.state == s_SELECT && 
+                possible_move && 
+                (is_opposite(board[i * GRID_Y + j], global.turn) || board[i * GRID_Y + j] == e_EMPTY) && 
+                global.mouse_pos_x == j && 
+                global.mouse_pos_y == i
+            ) {
                 DrawRectangle(j * CELL_X, i * CELL_Y, CELL_X, CELL_Y, is_light ? LIGHT_GREEN: DARK_GREEN);
             }
             else {
@@ -108,11 +116,14 @@ void draw_board(Texture2D* pieces)
             }
 
             // draw circles
-            if (possible_move && global.screen_state == PLAY) {
+            if (possible_move &&
+                (is_opposite(board[i * GRID_Y + j], global.turn) || board[i * GRID_Y + j] == e_EMPTY) && 
+                global.screen_state == PLAY
+            ) {
 #ifdef DEBUG
                 DrawText(TextFormat("x: %d y: %d", j, i), j * CELL_X, i * CELL_Y, 16, RED);
 #endif /* ifdef DEBUG */
-                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, DARK_GREEN);
+                DrawCircle((j * CELL_X) + CELL_X/2, (i * CELL_Y) + CELL_Y/2, 5, INBETWEEN_GREEN);
             }
         }
     }
@@ -123,7 +134,7 @@ void draw_intro()
     static unsigned int frame = 0;
     ClearBackground(LIGHT_SHADE);
     if (frame == 0xFF) global.screen_state = MENU;
-    char* text = "Kays";
+    char* text = "khanafis";
     int font_size = 64;
     int text_size = MeasureText(text, font_size);
     Color color = (Color){.r = 0x00, .g = 0x00, .b = 0x00, .a = frame};
@@ -239,7 +250,12 @@ void draw_end(Texture2D* pieces)
     Rectangle texture_dest_b = {.x = texture_x, .y = 64.0f * 4 + 32.0f, .width = 64.0f, .height = 64.0f};
     DrawTexturePro(*pieces, type_to_rect(w_KING), texture_dest_b, pos, 0, WHITE);
 }
-bool is_checked(e_piece type)
+
+void draw_error(Texture2D* pieces)
 {
-    return ((type == b_KING && global.checked == c_BLACK) || (type == w_KING && global.checked == c_WHITE)) && global.amount_checked > 0;
+    draw_board(pieces);
+    char* title = "whoopsie...";
+    int t_font_size = 64;
+    int t_text_size = MeasureText(title, t_font_size);
+    DrawText(title, WIDTH/2 - t_text_size/2, HEIGHT/2  - (t_font_size/2), t_font_size, BLACK);
 }

@@ -21,8 +21,10 @@ void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* 
 bool in_single_check_by_slider(e_piece p);
 bool can_castle_right(int x, int y, e_piece type);
 bool can_castle_left(int x, int y, e_piece type);
+bool check_pinned(int x, int y, e_piece type);
 
 void find_selected_moves() {
+    global.selected_pinned = check_pinned(global.selected_x, global.selected_y, global.selected_type);
     find_moves(global.selected_x, global.selected_y, global.selected_type, &global.selected_moves);
 }
 
@@ -61,13 +63,67 @@ void find_moves(int x, int y, e_piece type, uint64_t* moves)
     }
 }
 
-int abs(int a) {
+int abs(int a)
+{
     return a < 0 ? -a : a;
+}
+
+int sign(int a)
+{
+    return a == 0 ? 0 : (a > 0 ? 1 : -1);
+}
+
+bool check_pinned(int x, int y, e_piece type)
+{
+    int dx = x - global.king_x;
+    int dy = y - global.king_y;
+    if (dx == 0 && dy == 0) { // king cant be pinned
+        return false;
+    }
+    if (dx != 0 && dy != 0 && abs(dx) != abs(dy)) {
+        return false;
+    }
+    dx = sign(dx);
+    dy = sign(dy);
+    uint64_t pin_line = 0;
+
+    // start at the square right after the king in direction of selected piece
+    int p_x = global.king_x + dx;
+    int p_y = global.king_y + dy;
+    // check if there are any pieces between the king and selected piece
+    while (p_x != x || p_y != y) {
+        if (!is_empty(board_at(p_x, p_y))) {
+            return false;
+        }
+        set_bit(pin_line, p_x, p_y);
+        p_x = p_x + dx;
+        p_y = p_y + dy;
+    }
+
+    while(p_x >= 0 && p_x < GRID_X && p_y >= 0 && p_y < GRID_Y) {
+        e_piece p = board_at(p_x, p_y);
+        if (!is_empty(p)) {
+            if (is_enemy(p, global.selected_type)) {
+                if (is_slider(p)) {
+                    global.pinned_by = p;
+                    global.pinned_by_x = p_x;
+                    global.pinned_by_y = p_y;
+                    global.pin_line = pin_line;
+                    return true;
+                }
+                return false;
+            }
+        }
+        set_bit(pin_line, p_x, p_y);
+        p_x = p_x + dx;
+        p_y = p_y + dy;
+    }
+    return false;
 }
 
 bool en_passantable(int x, int y, e_piece type)
 {
-    if (is_enemy(type, global.prev.type)) {
+    if (is_enemy(type, global.prev.type) && (global.prev.type == b_PAWN || global.prev.type == w_PAWN)) {
         if (y == 3 && abs((global.prev.ty - global.prev.fy)) == 2 && ((global.prev.tx == (x - 1)) || (global.prev.tx == (x + 1)))) {
             return true;
         }
@@ -85,6 +141,9 @@ void move_if_valid(int x, int y, e_piece type, uint64_t* moves)
         if (!get_bit(global.checking_moves, x, y)) {
             unset_bit(*moves, x, y);
         }
+    }
+    if (global.selected_pinned && (get_bit(global.pin_line, x, y) == 0)) {
+        unset_bit(*moves, x, y);
     }
 }
 
@@ -109,10 +168,10 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
                 move_if_valid(x, y - 2, type, moves);
             }
         }
-        if (x != GRID_X - 1 && is_black(board_at(x + 1, y - 1))) {
+        if (x != GRID_X - 1 && (is_black(board_at(x + 1, y - 1)) || is_white(board_at(x + 1, y - 1)))) {
             capture_if_valid(x + 1, y - 1, type, moves);
         }
-        if (x != 0 && is_black(board_at(x - 1, y - 1))) {
+        if (x != 0 && (is_black(board_at(x - 1, y - 1)) || is_white(board_at(x - 1, y - 1)))) {
             capture_if_valid(x - 1, y - 1, type, moves);
         }
         if (en_passantable(x, y, type)) {
@@ -127,10 +186,10 @@ void move_pawn(int x, int y, e_piece type, uint64_t* moves)
                 move_if_valid(x, y + 2, type, moves);
             }
         }
-        if (x != GRID_X - 1 && is_white(board_at(x + 1, y + 1))) {
+        if (x != GRID_X - 1 && (is_white(board_at(x + 1, y + 1)) || is_black(board_at(x + 1, y + 1)))) {
             capture_if_valid(x + 1, y + 1, type, moves);
         }
-        if (x != 0 && is_white(board_at(x - 1, y + 1))) {
+        if (x != 0 && (is_white(board_at(x - 1, y + 1)) || is_black(board_at(x - 1, y + 1)))) {
             capture_if_valid(x - 1, y + 1, type, moves);
         }
         if (en_passantable(x, y, type)) {
@@ -163,6 +222,12 @@ void move_square(int x, int y, int dx, int dy, e_piece type, uint64_t* moves)
                 }
                 set_bit(*moves, j, i);
             }
+            else {
+                set_bit(*moves, j, i);
+            }
+            if (global.selected_pinned && (get_bit(global.pin_line, j, i) == 0)) {
+                unset_bit(*moves, j, i);
+            }
         }
     }
 }
@@ -188,6 +253,11 @@ void move_axis(int x, int y, int dir_x, int dir_y, e_piece type, uint64_t* moves
                     continue;
                 }
             }
+            if (global.selected_pinned && (get_bit(global.pin_line, dx, dy) == 0)) {
+                dx = dx + dir_x;
+                dy = dy + dir_y;
+                continue;
+            }
             set_bit(*moves, dx, dy);
         }
         else {
@@ -198,6 +268,9 @@ void move_axis(int x, int y, int dir_x, int dir_y, e_piece type, uint64_t* moves
                     }
                 }
                 set_bit(*moves, dx, dy);
+            }
+            else {
+                set_bit(*moves, dx, dy); // set the bit of our ally so that we can check for draws
             }
             break;
         }
@@ -239,7 +312,7 @@ void sq2sq_moves_slider(e_piece type, int fx, int fy, int tx, int ty, uint64_t* 
     global.amount_checked = amount_checked;
 }
 
-void find_piece_position(int* x, int* y, e_piece type)
+bool find_piece_position(int* x, int* y, e_piece type)
 {
     for (int i = 0; i <= GRID_Y; i++) {
         for (int j = 0; j <= GRID_X; j++) {
@@ -248,11 +321,11 @@ void find_piece_position(int* x, int* y, e_piece type)
             if (p == type) {
                 *x = j;
                 *y = i;
-                break;
+                return true;
             }
         }
     }
-
+    return false;
 }
 
 heat_map build_heatmap(e_piece type)
@@ -282,50 +355,54 @@ heat_map build_heatmap(e_piece type)
 void check()
 {
     int x = 0, y = 0;
-    find_piece_position(&x, &y, global.turn == t_WHITE ? w_KING : b_KING);
-    global.king_x = x;
-    global.king_y = y;
+    bool found = find_piece_position(&x, &y, global.turn == t_WHITE ? w_KING : b_KING);
+    if (found) {
+        global.king_x = x;
+        global.king_y = y;
 
-    heat_map enemy = build_heatmap(global.turn == t_WHITE ? w_KING : b_KING);
+        heat_map enemy = build_heatmap(global.turn == t_WHITE ? w_KING : b_KING);
 
-    global.amount_checked = enemy.amount_checked;
-    global.checking_x = enemy.checking_x;
-    global.checking_y = enemy.checking_y;
-    global.heatmap = enemy.heatmap;
+        global.amount_checked = enemy.amount_checked;
+        global.checking_x = enemy.checking_x;
+        global.checking_y = enemy.checking_y;
+        global.heatmap = enemy.heatmap;
 
-    bool heat = (bool)get_bit(enemy.heatmap, x, y);
-    global.checked = (heat && global.turn == t_WHITE) ? c_WHITE : c_BLACK;
-    global.amount_checked = heat ? global.amount_checked : 0;
-    if (global.amount_checked > 1 && global.state == s_SELECT) { // only way is to move king
-        if (global.selected_type != (global.turn == t_WHITE ? w_KING : b_KING)) {
-            global.state = s_NONE;
-            global.selected_type = e_EMPTY;
-            global.selected_x = 0;
-            global.selected_y = 0;
-            global.selected_moves = 0;
-            return;
+        bool heat = (bool)get_bit(enemy.heatmap, x, y);
+        global.checked = (heat && global.turn == t_WHITE) ? c_WHITE : c_BLACK;
+        global.amount_checked = heat ? global.amount_checked : 0;
+        if (global.amount_checked > 1 && global.state == s_SELECT) { // only way is to move king
+            if (global.selected_type != (global.turn == t_WHITE ? w_KING : b_KING)) {
+                global.state = s_NONE;
+                global.selected_type = e_EMPTY;
+                global.selected_x = 0;
+                global.selected_y = 0;
+                global.selected_moves = 0;
+                return;
+            }
+        }
+
+        if (global.amount_checked == 1) {
+            e_piece checked_by = board_at(global.checking_x, global.checking_y);
+            sq2sq_moves_slider(checked_by, global.checking_x, global.checking_y, global.king_x, global.king_y, &global.checking_moves);
+        }
+
+        if (global.amount_checked > 0) {
+            global.castling = false;
+        }
+
+        heat_map our = build_heatmap(global.turn == t_WHITE ? b_KING : w_KING);
+        if (our.heatmap == 0 && global.amount_checked > 0) {
+            global.screen_state = END;
+            global.draw = false;
+        }
+        if (our.heatmap == 0 && global.amount_checked == 0) {
+            global.screen_state = END;
+            global.draw = true;
         }
     }
-
-    if (global.amount_checked == 1) {
-        e_piece checked_by = board_at(global.checking_x, global.checking_y);
-        sq2sq_moves_slider(checked_by, global.checking_x, global.checking_y, global.king_x, global.king_y, &global.checking_moves);
+    else {
+        global.screen_state = ERROR;
     }
-
-    if (global.amount_checked > 0) {
-        global.castling = false;
-    }
-
-    heat_map our = build_heatmap(global.turn == t_WHITE ? b_KING : w_KING);
-    if (our.heatmap == 0 && global.amount_checked > 0) {
-        global.screen_state = END;
-        global.draw = false;
-    }
-    if (our.heatmap == 0 && global.amount_checked == 0) {
-        global.screen_state = END;
-        global.draw = true;
-    }
-    //find our heatmap, if it is 0 then we and amount_checking is 0 then draw, otherwise we lost
 }
 
 void move_king(int x, int y, e_piece type, uint64_t* moves)
@@ -333,13 +410,20 @@ void move_king(int x, int y, e_piece type, uint64_t* moves)
 
     uint64_t heatmap = global.heatmap;
 
+    board[y * GRID_Y + x] = e_EMPTY;
+    heat_map enemy = build_heatmap(global.turn == t_WHITE ? w_KING : b_KING);
+    board[y * GRID_Y + x] = type;
+
     for (int i = y - 1; i <= y + 1; i++) {
         for (int j = x - 1; j <= x + 1; j++) {
             if (j >= GRID_X || i >= GRID_Y || j < 0 || i < 0) continue;
             e_piece p = board_at(j, i);
             bool heat = (bool)get_bit(heatmap, j, i);
             if (!heat && (is_empty(p) || is_enemy(type, p))) {
-                set_bit(*moves, j, i);
+            bool slider = (bool)get_bit(enemy.heatmap, j, i);
+                if (!slider) {
+                    set_bit(*moves, j, i);
+                }
             }
         }
     }
@@ -524,7 +608,33 @@ bool is_slider(e_piece a)
     return (a >= 4 && a <= 9) || (a <= -4 && a >= -9);
 }
 
+bool is_pawn(e_piece p)
+{
+    return p == w_PAWN || p == b_PAWN;
+}
+
+bool is_king(e_piece p)
+{
+    return p == w_KING || p == b_KING;
+}
+
+bool is_friendly(e_piece piece, bool turn)
+{
+    return (turn == t_WHITE && is_white(piece)) || (turn == t_BLACK && is_black(piece));
+}
+
+bool is_opposite(e_piece piece, bool turn)
+{
+    return (turn == t_WHITE && is_black(piece)) || (turn == t_BLACK && is_white(piece));
+}
+
 bool in_single_check_by_slider(e_piece p)
 {
     return (in_single_check(p) && is_slider(board_at(global.checking_x, global.checking_y))) || in_single_check(p);
+}
+
+
+bool is_checked(e_piece type)
+{
+    return ((type == b_KING && global.checked == c_BLACK) || (type == w_KING && global.checked == c_WHITE)) && global.amount_checked > 0;
 }

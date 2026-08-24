@@ -108,23 +108,3 @@ void execute_move(Sound* move_sound, Sound* capture_sound, int x, int y)
     }
     clear_selection();
 }
-
-bool is_pawn(e_piece p)
-{
-    return p == w_PAWN || p == b_PAWN;
-}
-
-bool is_king(e_piece p)
-{
-    return p == w_KING || p == b_KING;
-}
-
-bool is_friendly(e_piece piece, bool turn)
-{
-    return (turn == t_WHITE && is_white(piece)) || (turn == t_BLACK && is_black(piece));
-}
-
-bool is_opposite(e_piece piece, bool turn)
-{
-    return (turn == t_WHITE && is_black(piece)) || (turn == t_BLACK && is_white(piece));
-}

@@ -54,6 +54,7 @@ typedef enum {
     INTRO,
     MENU,
     END,
+    ERROR,
     PLAY,
     PROMO
 } e_screen_state;
@@ -61,6 +62,12 @@ typedef enum {
 typedef struct global_state {
     int selected_x;
     int selected_y;
+
+    bool selected_pinned;
+    e_piece pinned_by;
+    int pinned_by_x;
+    int pinned_by_y;
+    uint64_t pin_line;
 
     int mouse_pos_x;
     int mouse_pos_y;

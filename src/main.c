@@ -45,6 +45,28 @@ bool save_board()
     return true;
 }
 
+bool load_file(char* src)
+{
+    FILE* f = fopen(src, "r");
+    if (f == NULL) {
+        fprintf(stderr, "INFO: Failed to open file\n");
+        return false;
+    }
+    char buffer[64] = {};
+    fread(buffer, sizeof(char), 64, f);
+    load_board(buffer);
+    global.screen_state = PLAY;
+    global.selected_moves = 0;
+    global.heatmap = 0;
+    global.state = s_NONE;
+    global.prev.type = e_EMPTY;
+
+    check();
+    printf("INFO: loaded board.\n");
+    fclose(f);
+    return true;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -86,23 +108,12 @@ int main(int argc, char** argv)
             save_board();
         }
         if (IsKeyPressed(KEY_L)) {
-            FILE* f = fopen("saved.txt", "r");
-            if (f == NULL) {
-                fprintf(stderr, "INFO: Failed to open file\n");
-                goto end;
-            }
-            char buffer[64] = {};
-            fread(buffer, sizeof(char), 64, f);
-            load_board(buffer);
-            global.screen_state = PLAY;
-            global.selected_moves = 0;
-            global.heatmap = 0;
-            global.state = s_NONE;
-            global.prev.type = e_EMPTY;
-
-            check();
-            printf("INFO: loaded board.\n");
-            fclose(f);
+            load_file("saved.txt");
+        }
+        if (IsFileDropped()) {
+            FilePathList files = LoadDroppedFiles();
+            load_file(files.paths[files.count - 1]); // load last dropped file
+            UnloadDroppedFiles(files);
         }
 
         BeginDrawing();
@@ -151,6 +162,9 @@ int main(int argc, char** argv)
             case END:
                 draw_end(&pieces);
                 break;
+            case ERROR:
+                draw_error(&pieces);
+                break;
             }
 
 #ifdef DEBUG
@@ -158,7 +172,7 @@ int main(int argc, char** argv)
 #endif
         EndDrawing();
     }
-end:
+
     UnloadTexture(pieces);
     CloseWindow();
     return 0;
